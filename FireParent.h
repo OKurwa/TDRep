@@ -55,7 +55,7 @@ inline void intrusive_ptr_release(FireParent* e) { e->Release(); }
 class NormalMissile : public FireParent {
 public:
 	NormalMissile();
-	NormalMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, std::string mType, Render::TexturePtr tex);
+	NormalMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, Render::TexturePtr tex);
 	~NormalMissile();
 
 	void Draw();
@@ -67,7 +67,7 @@ private:
 class SlowMissile : public FireParent {
 public:
 	SlowMissile();
-	SlowMissile(FPoint position, FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, float sFactor, Render::TexturePtr tex);
+	SlowMissile(FPoint position, FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, float sFactor, int sRange, Render::TexturePtr tex);
 	~SlowMissile();
 
 	void Draw();

@@ -114,7 +114,7 @@ bool FireParent::Hit() {
 //----------------------------------------------//
 //----------------------------------------------//
 NormalMissile::NormalMissile() {
-	_missileType = "";
+	_missileType = "Normal";
 	_position = FPoint(0, 0);
 	_targetPosition = FPoint(0, 0);
 	_speed = FPoint(0, 0);
@@ -129,9 +129,9 @@ NormalMissile::NormalMissile() {
 	_target = nullptr;
 };
 
-NormalMissile::NormalMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, std::string mType, Render::TexturePtr tex) {
+NormalMissile::NormalMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, Render::TexturePtr tex) {
 	
-	_missileType = mType;
+	_missileType = "Normal";
 	_position = position;
 	_targetPosition = target->HitPosition(fTime);
 	_speed = FPoint(0, 0);
@@ -202,7 +202,85 @@ void NormalMissile::Update(float dt) {
 //----------------------------------------------//
 //----------------------------------------------//
 
+SlowMissile::SlowMissile() {
+	_missileType = "Slow";
+	_position = FPoint(0, 0);
+	_targetPosition = FPoint(0, 0);
+	_speed = FPoint(0, 0);
+	_modSpeed = 0;
+	_flyTime = 0;
+	_missileTimer = 0;
+	_fly = true;
+	_hit = false;
+	_missilePathX.Clear();
+	_missilePathY.Clear();
+	_tex = nullptr;
+	
+};
 
+SlowMissile::SlowMissile(FPoint position, FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, float sFactor, int sRange, Render::TexturePtr tex) {
+	_missileType = "Slow";
+	_position = position;
+	_targetPosition = tPosition;
+	_speed = FPoint(0, 0);
+	_modSpeed = mSpeed;
+	_flyTime = fTime;
+	_missileTimer = mFlyTimer;
+	_fly = true;
+	_hit = false;
+	_tex = tex;
+	_slowFactor = sFactor;
+	_splashRange = sRange;
+	_missilePathX.Clear();
+	_missilePathY.Clear();
+	if (_flyTime == 0 && _missileTimer == 0 && _modSpeed > 0) {
+		float distance = sqrt((_position.x - _targetPosition.x)*(_position.x - _targetPosition.x) + (_position.y - _targetPosition.y)*(_position.y - _targetPosition.y));
+		float time = distance / (float)_modSpeed;
+		_flyTime = time;
+		_missileTimer = 0;
+		_missilePathX.addKey(0, _position.x);
+		_missilePathY.addKey(0, _position.y);
+		_missilePathX.addKey(time, _targetPosition.x);
+		_missilePathY.addKey(time, _targetPosition.y);
+	}
+	else {
+		_missilePathX.addKey(_missileTimer, _position.x);
+		_missilePathY.addKey(_missileTimer, _position.y);
+		_missilePathX.addKey(_flyTime, _targetPosition.x);
+		_missilePathY.addKey(_flyTime, _targetPosition.y);
+	}
+	_missilePathX.CalculateGradient();
+	_missilePathY.CalculateGradient();
+};
+
+SlowMissile::~SlowMissile() {
+};
+
+void SlowMissile::Draw() {
+	if (_tex) {
+		_tex->Draw(_position);
+	}
+	else {
+		IRect cRect = IRect(_position.x - 1, _position.y - 1, 3, 3);
+		//Render::device.SetTexturing(false);
+		Render::BeginColor(Color(255, 200, 100, 255));
+		Render::DrawRect(cRect);
+		Render::EndColor();
+		//Render::device.SetTexturing(true);
+	}
+};
+
+void SlowMissile::Update(float dt) {
+	if (_missileTimer >= _flyTime && !_hit) {
+		_hit = true;
+		_fly = false;
+	}
+	else {
+		_missileTimer += dt;
+		_position.x = _missilePathX.getGlobalFrame(_missileTimer);
+		_position.y = _missilePathY.getGlobalFrame(_missileTimer);
+	}
+};
 
 
 
