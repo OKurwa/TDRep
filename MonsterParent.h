@@ -65,12 +65,12 @@ class BossMonster : public MonsterParent
 {
 public:
 	BossMonster();
-	BossMonster(FPoint position, int modSpeed, int hp, FieldMap * map, Render::TexturePtr skin, float reduceDamage);
+	BossMonster(FPoint position, int modSpeed, int hp, FieldMap * map,  float reduceDamage, Render::TexturePtr skin);
 	~BossMonster();
 
 	void Draw();
 	void Update(float dt);
-	void TakeDamage(std::string effType, FPoint values);
+	void TakeDamage(std::string effType, FPoint values, float damage);
 private:
 	float _reduceDamage;
 };
@@ -79,13 +79,13 @@ class ImmuneMonster : public MonsterParent
 {
 public:
 	ImmuneMonster();
-	ImmuneMonster(FPoint position, int modSpeed, int hp, const FieldMap * map, Render::TexturePtr _skin);
+	ImmuneMonster(FPoint position, int modSpeed, int hp, FieldMap * map, Render::TexturePtr _skin);
 	~ImmuneMonster();
 
 	void Draw();
 	void Update(float dt);
 	
-	void TakeDamage(std::string effType, FPoint values);
+	void TakeDamage(std::string effType, FPoint values, float damage);
 private:
 
 };
@@ -94,12 +94,12 @@ class HealingMonster :public MonsterParent
 {
 public:
 	HealingMonster();
-	HealingMonster(FPoint position, int modSpeed, int hp, const FieldMap * map, Render::TexturePtr skin, int healPerSecond);
+	HealingMonster(FPoint position, int modSpeed, int hp, FieldMap * map, Render::TexturePtr skin, int healPerSecond);
 	~HealingMonster();
 
 	void Draw();
 	void Update(float dt);
-	void TakeDamage(std::string effType, FPoint values);
+	void TakeDamage(std::string effType, FPoint values, float damage);
 
 private:
 	int _healPerSecond;

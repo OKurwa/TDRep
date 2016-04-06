@@ -73,7 +73,7 @@ class SlowTower : public TowerParent
 {
 public:
 	SlowTower();
-	SlowTower(FPoint position, IPoint cell, float rTime, float rTimer, int range, int sRange, FPoint slow, int mSpeed, IPoint dmg, Render::TexturePtr tex);
+	SlowTower(FPoint position, IPoint cell, std::vector<boost::intrusive_ptr<MonsterParent>> * targets, float rTime, float rTimer, int range, int sRange, FPoint sFactor, int mSpeed, IPoint dmg, Render::TexturePtr tex);
 	~SlowTower();
 
 
@@ -123,7 +123,7 @@ class SplashTower : public TowerParent
 {
 public:
 	SplashTower();
-	SplashTower(FPoint position, IPoint cell, float rTime, float rTimer, int range, int sRange, int mSpeed, IPoint dmg, Render::TexturePtr tex);
+	SplashTower(FPoint position, IPoint cell, std::vector<boost::intrusive_ptr<MonsterParent>> * targets, float rTime, float rTimer, int range, int sRange, int mSpeed, IPoint dmg, Render::TexturePtr tex);
 	~SplashTower();
 
 

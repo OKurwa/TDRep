@@ -95,7 +95,7 @@ void FieldCell::Draw() {
 			c = Color(200, 0, 0, 255);
 			break;
 		case SLOT:
-			c = Color(100, 200, 100, 255);
+			c = Color(200, 200, 200, 255);
 			break;
 		case GRASS:
 			c = Color(100, 100, 100, 255);

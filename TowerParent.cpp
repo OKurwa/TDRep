@@ -266,8 +266,9 @@ SlowTower::SlowTower() {
 	_splashRange = 0;
 	_slow = FPoint(0, 0);
 	_damage = IPoint(0, 0);
+	_targets = nullptr;
 };
-SlowTower::SlowTower(FPoint position, IPoint cell, float rTime, float rTimer, int range, int sRange, FPoint sFactor, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
+SlowTower::SlowTower(FPoint position, IPoint cell, std::vector<boost::intrusive_ptr<MonsterParent>> * targets, float rTime, float rTimer, int range, int sRange, FPoint sFactor, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
 	_towerType = "Slow";
 	_position = position;
 	_cell = cell;
@@ -281,6 +282,7 @@ SlowTower::SlowTower(FPoint position, IPoint cell, float rTime, float rTimer, in
 	_splashRange = sRange;
 	_slow = sFactor;
 	_damage = dmg;
+	_targets = targets;
 };
 SlowTower::~SlowTower() {};
 
@@ -296,7 +298,7 @@ void SlowTower::Draw() {
 			Render::BeginColor(Color(255, 0, 0, 255));
 		}
 		else {
-			Render::BeginColor(Color(255, 200, 100, 255));
+			Render::BeginColor(Color(50, 50, 255, 255));
 		}
 		//Render::BeginColor(Color(255, 200, 100, 255));
 		Render::DrawRect(cRect);
@@ -341,25 +343,26 @@ bool SlowTower::Shoot() {
 };
 
 bool SlowTower::TakeAim(std::vector<boost::intrusive_ptr<MonsterParent>> * monsters) {
-	if (_target == nullptr) {
+	if (_target == nullptr || _target->Dead()) {
 		float d = 9999;
 		int tarIndex = 9999;
 		for (int i = 0; i < monsters->size(); i++) {
-			FPoint tarPos = (*monsters)[i]->Position();
-			float tmpD = sqrt((tarPos.x - _position.x)*(tarPos.x - _position.x) + (tarPos.y - _position.y)*(tarPos.y - _position.y));
-			if (tmpD<d) {
-				d = tmpD;
-				tarIndex = i;
+			if (!(*monsters)[i].get()->Dead()) {
+				FPoint tarPos = (*monsters)[i]->Position();
+				float tmpD = sqrt((tarPos.x - _position.x)*(tarPos.x - _position.x) + (tarPos.y - _position.y)*(tarPos.y - _position.y));
+				if (tmpD<d) {
+					d = tmpD;
+					tarIndex = i;
+				}
 			}
+
 		}
 		if (d <= _range && tarIndex < 9999) {
-			_targets = monsters;
 			_target = (*monsters)[tarIndex].get();
 			return true;
 		}
 		else {
 			_target = nullptr;
-			_targets = nullptr;
 			return false;
 		}
 
@@ -367,12 +370,12 @@ bool SlowTower::TakeAim(std::vector<boost::intrusive_ptr<MonsterParent>> * monst
 	else {
 		FPoint tarPos = _target->Position();
 		float tmpD = sqrt((tarPos.x - _position.x)*(tarPos.x - _position.x) + (tarPos.y - _position.y)*(tarPos.y - _position.y));
+
 		if (tmpD <= _range) {
 			return true;
 		}
 		else {
 			_target = nullptr;
-			_targets = nullptr;
 			return false;
 		}
 
@@ -427,7 +430,7 @@ void DecayTower::Draw() {
 			Render::BeginColor(Color(255, 0, 0, 255));
 		}
 		else {
-			Render::BeginColor(Color(255, 200, 100, 255));
+			Render::BeginColor(Color(50, 255, 50, 255));
 		}
 		//Render::BeginColor(Color(255, 200, 100, 255));
 		Render::DrawRect(cRect);
@@ -518,7 +521,7 @@ void BashTower::Draw() {
 			Render::BeginColor(Color(255, 0, 0, 255));
 		}
 		else {
-			Render::BeginColor(Color(255, 200, 100, 255));
+			Render::BeginColor(Color(50, 50, 50, 255));
 		}
 		//Render::BeginColor(Color(255, 200, 100, 255));
 		Render::DrawRect(cRect);
@@ -588,7 +591,7 @@ SplashTower::SplashTower() {
 	_damage = IPoint(0,0);
 	
 };
-SplashTower::SplashTower(FPoint position, IPoint cell, float rTime, float rTimer, int range, int sRange, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
+SplashTower::SplashTower(FPoint position, IPoint cell, std::vector<boost::intrusive_ptr<MonsterParent>> * targets, float rTime, float rTimer, int range, int sRange, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
 	_towerType = "Splash";
 	_position = position;
 	_cell = cell;
@@ -600,7 +603,7 @@ SplashTower::SplashTower(FPoint position, IPoint cell, float rTime, float rTimer
 	_missiles.clear();
 	_tex = tex;
 	_splashRange = sRange;
-	_targets = nullptr;
+	_targets = targets;
 	_damage = dmg;
 };
 SplashTower::~SplashTower() {};
@@ -617,7 +620,7 @@ void SplashTower::Draw() {
 			Render::BeginColor(Color(255, 0, 0, 255));
 		}
 		else {
-			Render::BeginColor(Color(255, 200, 100, 255));
+			Render::BeginColor(Color(255, 50, 50, 255));
 		}
 		//Render::BeginColor(Color(255, 200, 100, 255));
 		Render::DrawRect(cRect);
@@ -662,25 +665,26 @@ bool SplashTower::Shoot() {
 };
 
 bool SplashTower::TakeAim(std::vector<boost::intrusive_ptr<MonsterParent>> * monsters) {
-	if (_target == nullptr) {
+	if (_target == nullptr || _target->Dead()) {
 		float d = 9999;
 		int tarIndex = 9999;
 		for (int i = 0; i < monsters->size(); i++) {
-			FPoint tarPos = (*monsters)[i]->Position();
-			float tmpD = sqrt((tarPos.x - _position.x)*(tarPos.x - _position.x) + (tarPos.y - _position.y)*(tarPos.y - _position.y));
-			if (tmpD<d) {
-				d = tmpD;
-				tarIndex = i;
+			if (!(*monsters)[i].get()->Dead()) {
+				FPoint tarPos = (*monsters)[i]->Position();
+				float tmpD = sqrt((tarPos.x - _position.x)*(tarPos.x - _position.x) + (tarPos.y - _position.y)*(tarPos.y - _position.y));
+				if (tmpD<d) {
+					d = tmpD;
+					tarIndex = i;
+				}
 			}
+
 		}
 		if (d <= _range && tarIndex < 9999) {
-			_targets = monsters;
 			_target = (*monsters)[tarIndex].get();
 			return true;
 		}
 		else {
 			_target = nullptr;
-			_targets = nullptr;
 			return false;
 		}
 
@@ -688,12 +692,12 @@ bool SplashTower::TakeAim(std::vector<boost::intrusive_ptr<MonsterParent>> * mon
 	else {
 		FPoint tarPos = _target->Position();
 		float tmpD = sqrt((tarPos.x - _position.x)*(tarPos.x - _position.x) + (tarPos.y - _position.y)*(tarPos.y - _position.y));
+
 		if (tmpD <= _range) {
 			return true;
 		}
 		else {
 			_target = nullptr;
-			_targets = nullptr;
 			return false;
 		}
 

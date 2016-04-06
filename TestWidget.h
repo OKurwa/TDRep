@@ -5,7 +5,13 @@
 #include "FireParent.h"
 #include "TowerParent.h"
 #include "MonsterParent.h"
-
+enum TowerType {
+	Normal,
+	Splash,
+	Slow,
+	Decay,
+	Bash
+};
 ///
 /// Виджет - основной визуальный элемент на экране.
 /// Он отрисовывает себя, а также может содержать другие виджеты.
@@ -56,7 +62,7 @@ private:
 	std::vector<boost::intrusive_ptr<MonsterParent>> _monsters;    // текущие монстры на поле
 	FieldMap _fieldMap;
 	MonsterAttack _monsterAttack;
-
+	TowerType _curTowerType;
 
 /*Фейерверк*/
 /*
