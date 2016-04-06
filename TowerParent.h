@@ -10,19 +10,19 @@ class TowerParent
 {
 public:
 	TowerParent();
-	TowerParent(FPoint position, IPoint cell, float rTime, float rTimer, int range, int mSpeed, Render::TexturePtr tex);
+	TowerParent(FPoint position, IPoint cell, float rTime, float rTimer, int range, int mSpeed, IPoint dmg, Render::TexturePtr tex);
 	~TowerParent();
 
 
 	virtual void Draw() = 0;
 	virtual void Update(float dt);
 	
-	virtual bool Shoot();
+	virtual bool Shoot() = 0;
 	
 	std::vector<boost::intrusive_ptr<FireParent>> & GetMissiles();
 	FPoint Position();
 	IPoint Cell();
-	bool TakeAim(std::vector<boost::intrusive_ptr<MonsterParent>> monsters);
+	virtual bool TakeAim(std::vector<boost::intrusive_ptr<MonsterParent>> * monsters);
 
 	friend void intrusive_ptr_add_ref(TowerParent*);
 	friend void intrusive_ptr_release(TowerParent*);
@@ -40,6 +40,7 @@ public:
 protected:
 	int ref_cnt_;
 	std::string _towerType;
+	IPoint _damage;
 	FPoint _position;
 	IPoint _cell;
 	MonsterParent * _target;
@@ -59,7 +60,7 @@ class NormalTower: public TowerParent
 {
 public:
 	NormalTower();
-	NormalTower(FPoint position, IPoint cell, float rTime, float rTimer, int range, int mSpeed, Render::TexturePtr tex);
+	NormalTower(FPoint position, IPoint cell, float rTime, float rTimer, int range, int mSpeed, IPoint dmg, Render::TexturePtr tex);
 	~NormalTower();
 
 
@@ -72,59 +73,66 @@ class SlowTower : public TowerParent
 {
 public:
 	SlowTower();
-	SlowTower(FPoint position, float rTime, float rTimer, int range, int sRange, int mSpeed);
+	SlowTower(FPoint position, IPoint cell, float rTime, float rTimer, int range, int sRange, FPoint slow, int mSpeed, IPoint dmg, Render::TexturePtr tex);
 	~SlowTower();
 
 
 	void Draw();
 	void Update(float dt);
-
-	bool Shoot(FPoint tPosition);
+	bool Shoot();
+	bool TakeAim(std::vector<boost::intrusive_ptr<MonsterParent>> * monsters);
 private:
 	int    _splashRange;
-	float  _slowMul;
+	FPoint _slow;
+	std::vector<boost::intrusive_ptr<MonsterParent>> * _targets;
 };
 
 class DecayTower : public TowerParent
 {
 public:
 	DecayTower();
-	DecayTower(FPoint position, float rTime, float rTimer, int range, int sRange, int mSpeed);
+	DecayTower(FPoint position, IPoint cell, float rTime, float rTimer, int range, FPoint decay, int mSpeed, IPoint dmg, Render::TexturePtr tex);
 	~DecayTower();
 
 
 	void Draw();
 	void Update(float dt);
 
-	bool Shoot(FPoint tPosition);
+	bool Shoot();
+private:
+	FPoint _decay;
 };
 
 class BashTower : public TowerParent
 {
 public:
 	BashTower();
-	BashTower(FPoint position, float rTime, float rTimer, int range, int sRange, int mSpeed);
+	BashTower(FPoint position, IPoint cell, float rTime, float rTimer, int range, FPoint bash, int mSpeed, IPoint dmg, Render::TexturePtr tex);
 	~BashTower();
 
 
 	void Draw();
 	void Update(float dt);
 
-	bool Shoot(FPoint tPosition);
+	bool Shoot();
+private:
+	FPoint _bash;
 };
 
 class SplashTower : public TowerParent
 {
 public:
 	SplashTower();
-	SplashTower(FPoint position, float rTime, float rTimer, int range, int sRange, int mSpeed);
+	SplashTower(FPoint position, IPoint cell, float rTime, float rTimer, int range, int sRange, int mSpeed, IPoint dmg, Render::TexturePtr tex);
 	~SplashTower();
 
 
 	void Draw();
 	void Update(float dt);
 
-	bool Shoot(FPoint tPosition);
+	bool Shoot();
+	bool TakeAim(std::vector<boost::intrusive_ptr<MonsterParent>> * monsters);
 private:
 	int    _splashRange;
+	std::vector<boost::intrusive_ptr<MonsterParent>> * _targets;
 };

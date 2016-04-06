@@ -10,8 +10,9 @@ public:
 
 	virtual void Draw() = 0;
 	virtual void Update(float dt);
-	virtual void TakeDamage();
+	virtual void TakeDamage(std::string effType, FPoint values, float damage) = 0;
 	bool FindAWay();
+	bool Dead();
 	float WayDistance();
 	FPoint Position();
 	FPoint HitPosition(float dt);
@@ -33,7 +34,8 @@ protected:
 	FPoint	   _hitPosition;
 	FPoint	   _speed;
 	int		   _modSpeed;
-	int		   _hp;
+	float	   _hp;
+	bool	   _dead;
 	bool	   _damaged;
 	FieldMap   * _map;
 	IPoint _curCell;
@@ -43,6 +45,16 @@ protected:
 	Render::TexturePtr _skin;
 	TimedSplinePath _curWaySplineX;
 	TimedSplinePath _curWaySplineY;
+
+	//Ёффекты атак и счетчики
+
+	FPoint _bash;
+	FPoint _decay;
+	FPoint _slow;
+	
+
+
+
 };
 inline void intrusive_ptr_add_ref(MonsterParent* e) { e->AddRef(); }
 inline void intrusive_ptr_release(MonsterParent* e) { e->Release(); }
@@ -58,8 +70,7 @@ public:
 
 	void Draw();
 	void Update(float dt);
-	void TakeDamage();
-
+	void TakeDamage(std::string effType, FPoint values);
 private:
 	float _reduceDamage;
 };
@@ -73,8 +84,8 @@ public:
 
 	void Draw();
 	void Update(float dt);
-	void TakeDamage();
-
+	
+	void TakeDamage(std::string effType, FPoint values);
 private:
 
 };
@@ -88,7 +99,7 @@ public:
 
 	void Draw();
 	void Update(float dt);
-	void TakeDamage();
+	void TakeDamage(std::string effType, FPoint values);
 
 private:
 	int _healPerSecond;
@@ -103,7 +114,7 @@ public:
 
 	void Draw();
 	void Update(float dt);
-	void TakeDamage();
+	void TakeDamage(std::string effType, FPoint values, float damage);
 
 private:
 	

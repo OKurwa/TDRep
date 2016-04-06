@@ -19,6 +19,7 @@ MonsterParent::MonsterParent() {
 	_skin = nullptr;
 	_curWaySplineX.Clear();
 	_curWaySplineY.Clear();
+	_dead = false;
 };
 
 MonsterParent::MonsterParent(FPoint position, int modSpeed, int hp, FieldMap * map, Render::TexturePtr skin) {
@@ -74,16 +75,20 @@ MonsterParent::MonsterParent(FPoint position, int modSpeed, int hp, FieldMap * m
 	_damaged = false;
 	
 	_skin = skin;
+	_dead = false;
 };
 MonsterParent::~MonsterParent() {};
 
 void MonsterParent::Draw() {
-	IRect cRect = IRect(_position.x - 2, _position.y - 2, 5,5);
-	//Render::device.SetTexturing(false);
-	Render::BeginColor(Color(100, 200, 100, 255));
-	Render::DrawRect(cRect);
-	Render::EndColor();
-	//Render::device.SetTexturing(true);
+	if (!_dead) {
+		IRect cRect = IRect(_position.x - 2, _position.y - 2, 5, 5);
+		//Render::device.SetTexturing(false);
+		Render::BeginColor(Color(100, 200, 100, 255));
+		Render::DrawRect(cRect);
+		Render::EndColor();
+		//Render::device.SetTexturing(true);
+	}
+	
 };
 
 void MonsterParent::Update(float dt) {
@@ -93,7 +98,7 @@ void MonsterParent::Update(float dt) {
 	_position.y = _curWaySplineY.getGlobalFrame(_moveTimer);
 	
 };
-void MonsterParent::TakeDamage() {};
+
 
 
 bool MonsterParent::FindAWay() {
@@ -241,6 +246,10 @@ bool MonsterParent::FindAWay() {
 
 };
 
+bool MonsterParent::Dead() {
+	return _dead;
+};
+
 
 float MonsterParent::WayDistance() {
 	return _curWayDistance;
@@ -252,8 +261,10 @@ FPoint MonsterParent::Position() {
 };
 
 FPoint MonsterParent::HitPosition(float dt) {
-	return FPoint(_curWaySplineX.getGlobalFrame(dt + _moveTimer),
-				  _curWaySplineY.getGlobalFrame(dt + _moveTimer));
+	float edt = dt;
+	edt *=(1 - _slow.x)*(1 - _bash.x);
+	return FPoint(_curWaySplineX.getGlobalFrame(edt + _moveTimer),
+				  _curWaySplineY.getGlobalFrame(edt + _moveTimer));
 };
 
 
@@ -276,6 +287,7 @@ NormalMonster::NormalMonster() {
 	_skin = nullptr;
 	_curWaySplineX.Clear();
 	_curWaySplineY.Clear();
+	_dead = false;
 };
 NormalMonster::NormalMonster(FPoint position, int modSpeed, int hp, FieldMap * map, Render::TexturePtr skin) {
 	_position = position;
@@ -296,9 +308,13 @@ NormalMonster::NormalMonster(FPoint position, int modSpeed, int hp, FieldMap * m
 	_speed = FPoint(sX, sY);
 	*/
 	_modSpeed = modSpeed;
+	
 	_map = map;
 	_curCell = map->PosCell(_position);
 	_curWayDistance = 0;
+	
+	
+	
 	float timer = 0;
 	if (FindAWay()) {
 		_curWaySplineX.addKey(timer, _position.x);
@@ -330,23 +346,78 @@ NormalMonster::NormalMonster(FPoint position, int modSpeed, int hp, FieldMap * m
 	_damaged = false;
 
 	_skin = skin;
+	_dead = false;
 };
 NormalMonster::~NormalMonster() {
 };
 
 void NormalMonster::Draw() {
-	IRect cRect = IRect(_position.x - 2, _position.y - 2, 5, 5);
-	//Render::device.SetTexturing(false);
-	Render::BeginColor(Color(100, 200, 100, 255));
-	Render::DrawRect(cRect);
-	Render::EndColor();
-	//Render::device.SetTexturing(true);
+	if (!_dead) {
+		IRect cRect = IRect(_position.x - 2, _position.y - 2, 5, 5);
+		//Render::device.SetTexturing(false);
+		Render::BindFont("arial");
+
+		Render::BeginColor(Color(100, 200, 100, 255));
+		Render::DrawRect(cRect);
+		Render::EndColor();
+		Render::device.SetTexturing(true);
+		Render::BeginColor(Color(255, 255, 255, 255));
+		Render::PrintString(FPoint(_position.x - 2, _position.y - 2), utils::lexical_cast(math::round(_hp)), 0.70f);
+		Render::EndColor();
+		Render::device.SetTexturing(false);
+		//Render::device.SetTexturing(true);
+	}
+	
 };
 void NormalMonster::Update(float dt) {
-	_moveTimer += dt;
-	_curWayDistance -= _modSpeed*dt;
+	//Таймер замедления
+	if (_slow.y <= 0) {
+		_slow = FPoint(0,0);
+	}
+	else {
+		_slow.y -= dt;
+	}
+	//Таймер отравления
+	if (_decay.y <= 0) {
+		_decay = FPoint(0, 0);
+	}
+	else {
+		_decay.y -= dt;
+	}
+	//Таймер оглушения
+	if (_bash.y <= 0) {
+		_bash = FPoint(0, 0);
+	}
+	else {
+		_bash.y -= dt;
+	}
+	
+	_hp -= _decay.x * dt;
+
+	if (_hp <= 0) {
+		_dead = true;
+	}
+	float edt = dt;
+	edt *= (1 - _slow.x)*(1 - _bash.x);
+
+	_moveTimer += edt;
+	_curWayDistance -= _modSpeed*edt;
 	_position.x = _curWaySplineX.getGlobalFrame(_moveTimer);
 	_position.y = _curWaySplineY.getGlobalFrame(_moveTimer);
 };
-void NormalMonster::TakeDamage() {
+void NormalMonster::TakeDamage(std::string effType, FPoint values, float damage) {
+	if (effType == "Slow")
+		_slow = values;
+	if (effType == "Decay")
+		_decay = values;
+	if (effType == "Bash") {
+		values.x *= 100;
+		if (math::random(0, 100) <= values.x)
+			_bash = FPoint(1, values.y);
+	}
+
+	if (_hp > 0) {
+		_hp -= damage;
+	}
+	
 };

@@ -93,7 +93,7 @@ void TestWidget::Update(float dt)
 	}
 
 	for (unsigned int i = 0; i < _towers.size(); i++) {
-		if (_towers[i]->TakeAim(_monsters)) {
+		if (_towers[i]->TakeAim(&_monsters)) {
 			_towers[i]->Shoot();
 		}
 	}
@@ -105,7 +105,7 @@ void TestWidget::Update(float dt)
 	if (_curMonsterAttack < _monsterAttack.GetAttack().size()) {
 		if (_monsterAttack.GetAttack()[_curMonsterAttack].Count()>_monsters.size() && _spawnTimer>_spawnTime) {
 			
-			boost::intrusive_ptr<MonsterParent> m = new NormalMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31),_spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), 64, 1, &_fieldMap, nullptr);
+			boost::intrusive_ptr<MonsterParent> m = new NormalMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31),_spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), 64, 200, &_fieldMap, nullptr);
 			_monsters.push_back(m);
 
 		}
@@ -152,13 +152,36 @@ bool TestWidget::MouseDown(const IPoint &mouse_pos)
 	IPoint pos1 = _fieldMap.PosCell(FPoint(p.x, p.y));
 	_fieldMap.SelectCell(FPoint(p.x, p.y));
 
+	////////////////////////////////////////
+	//			 Создание башни           //
+	////////////////////////////////////////
+
+
 	if (Core::mainInput.GetMouseLeftButton()) {
 		if (_fieldMap.AddTower(pos1)) {
-			boost::intrusive_ptr<TowerParent> t = new NormalTower(FPoint(pos1.x*cellSize.x + cellSize.x/2, pos1.y*cellSize.y + cellSize.y/2), pos1, 0.5, 0, 192, 0, nullptr);
+			
+			//Разрывная, направленная на точку, урон по области радиусом 60 точек
+			//boost::intrusive_ptr<TowerParent> t = new SplashTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, 60, 0, IPoint(5, 10), nullptr);
+			
+			//Оглушающая, направленная на монстра, урон по 1 цели, 50% шанс оглушения на 1 секунду
+			//boost::intrusive_ptr<TowerParent> t = new BashTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, FPoint(0.5, 1), 0,IPoint(5, 10), nullptr);
+
+			//Замедляющая, направленная на точку, урон по области радиусом 30 точек, замедление 70% на 1 секунду 
+			//boost::intrusive_ptr<TowerParent> t = new SlowTower(FPoint(pos1.x*cellSize.x + cellSize.x/2, pos1.y*cellSize.y + cellSize.y/2), pos1, 0.5, 0, 192,30, FPoint(0.7,1),0,IPoint(5, 10), nullptr);
+			
+			//Отравляющая, направленная на монстра, урон по времени
+			boost::intrusive_ptr<TowerParent> t = new DecayTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, FPoint(15,10),0, IPoint(0, 0), nullptr);
+			
+			//Обычная, направленная на монстра, урон по 1 цели
+			//boost::intrusive_ptr<TowerParent> t = new NormalTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, 0,IPoint(100, 100), nullptr);
 			_towers.push_back(t);
 		};
 		
 	}
+
+	////////////////////////////////////////
+	//			 Удаление башни           //
+	////////////////////////////////////////
 
 	if (Core::mainInput.GetMouseRightButton()) {
 		if (_fieldMap.DestroyTower(pos1)) {

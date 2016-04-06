@@ -11,7 +11,7 @@ class FireParent {
 public:
 
 	FireParent();
-	FireParent(FPoint position,FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, std::string mType, Render::TexturePtr tex);
+	FireParent(FPoint position,FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, std::string mType, IPoint dmg, Render::TexturePtr tex);
 	~FireParent() {};
 	
 	virtual void Draw() = 0;
@@ -22,6 +22,7 @@ public:
 	std::string Type();
 	bool Fly();
 	bool Hit();
+	void MakePath();
 	friend void intrusive_ptr_add_ref(FireParent*);
 	friend void intrusive_ptr_release(FireParent*);
 	void AddRef() {
@@ -47,6 +48,8 @@ protected:
 	TimedSplinePath _missilePathX;
 	TimedSplinePath _missilePathY;
 	Render::TexturePtr _tex;
+	IPoint _damage;
+	
 };
 inline void intrusive_ptr_add_ref(FireParent* e) { e->AddRef(); }
 inline void intrusive_ptr_release(FireParent* e) { e->Release(); }
@@ -55,7 +58,7 @@ inline void intrusive_ptr_release(FireParent* e) { e->Release(); }
 class NormalMissile : public FireParent {
 public:
 	NormalMissile();
-	NormalMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, Render::TexturePtr tex);
+	NormalMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, IPoint dmg, Render::TexturePtr tex);
 	~NormalMissile();
 
 	void Draw();
@@ -67,54 +70,58 @@ private:
 class SlowMissile : public FireParent {
 public:
 	SlowMissile();
-	SlowMissile(FPoint position, FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, float sFactor, int sRange, Render::TexturePtr tex);
+	SlowMissile(FPoint position, FPoint tPosition, std::vector<boost::intrusive_ptr<MonsterParent>> * targets, int mSpeed, float fTime, float mFlyTimer, FPoint sFactor, int sRange, IPoint dmg, Render::TexturePtr tex);
 	~SlowMissile();
 
 	void Draw();
 	void Update(float dt);
 
 private:
-	float _slowFactor;
+	FPoint _slow;
 	int _splashRange;
-
+	std::vector<boost::intrusive_ptr<MonsterParent>> * _targets;
+	
 };
 
 class DecayMissile : public FireParent {
 public:
 	DecayMissile();
-	DecayMissile(FPoint position, FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, int dFactor, Render::TexturePtr tex);
+	DecayMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, FPoint decay, IPoint dmg, Render::TexturePtr tex);
 	~DecayMissile();
 
 	void Draw();
 	void Update(float dt);
 
 private:
-	int _decayFactor;
-};
+	MonsterParent * _target;
+	FPoint _decay;
+	FPoint decay;
+ };
 
 class BashMissile : public FireParent {
 public:
 	BashMissile();
-	BashMissile(FPoint position, FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, float bTime, float bChance, Render::TexturePtr tex);
+	BashMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, FPoint bash, IPoint dmg, Render::TexturePtr tex);
 	~BashMissile();
 
 	void Draw();
 	void Update(float dt);
 private:
-	float _bashTime;
-	float _bashChance;
+	MonsterParent * _target;
+	FPoint _bash;
 };
 
 class SplashMissile : public FireParent {
 public:
 	SplashMissile();
-	SplashMissile(FPoint position, FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, int sRange, Render::TexturePtr tex);
+	SplashMissile(FPoint position, FPoint tPosition, std::vector<boost::intrusive_ptr<MonsterParent>> * targets, int mSpeed, float fTime, float mFlyTimer, int sRange, IPoint dmg, Render::TexturePtr tex);
 	~SplashMissile();
 
 	void Draw();
 	void Update(float dt);
 private:
 	int _splashRange;
+	std::vector<boost::intrusive_ptr<MonsterParent>> * _targets;
 };
 
 

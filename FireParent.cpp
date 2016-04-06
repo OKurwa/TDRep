@@ -21,10 +21,10 @@ FireParent::FireParent() : ref_cnt_(0) {
 	_missilePathX.Clear();
 	_missilePathY.Clear();
 	_tex = nullptr;
-	
+	_damage = IPoint(0, 0);
 };
 
-FireParent::FireParent(FPoint position, FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, std::string mType, Render::TexturePtr tex) : ref_cnt_(0) {
+FireParent::FireParent(FPoint position, FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, std::string mType, IPoint dmg, Render::TexturePtr tex) : ref_cnt_(0) {
 	_missileType = mType;
 	_position = position;
 	_targetPosition = tPosition;
@@ -35,30 +35,8 @@ FireParent::FireParent(FPoint position, FPoint tPosition, int mSpeed, float fTim
 	_fly = true;
 	_hit = false;
 	_tex = tex;
-
-
-
-	_missilePathX.Clear();
-	_missilePathY.Clear();
-	if (_flyTime == 0 && _missileTimer == 0 && _modSpeed > 0) {
-		float distance = sqrt((_position.x - _targetPosition.x)*(_position.x - _targetPosition.x) + (_position.y - _targetPosition.y)*(_position.y - _targetPosition.y));
-		float time = distance / (float)_modSpeed;
-		_flyTime = time;
-		_missileTimer = 0;
-		_missilePathX.addKey(0, _position.x);
-		_missilePathY.addKey(0, _position.y);
-		_missilePathX.addKey(time, _targetPosition.x);
-		_missilePathY.addKey(time, _targetPosition.y);
-	}
-	else {
-		_missilePathX.addKey(_missileTimer, _position.x);
-		_missilePathY.addKey(_missileTimer, _position.y);
-		_missilePathX.addKey(_flyTime, _targetPosition.x);
-		_missilePathY.addKey(_flyTime, _targetPosition.y);
-	}
-	_missilePathX.CalculateGradient();
-	_missilePathY.CalculateGradient();
-	
+	_damage = dmg;
+	MakePath();
 
 };
 
@@ -107,41 +85,7 @@ bool FireParent::Hit() {
 	return _hit;
 };
 
-
-//----------------------------------------------//
-//----------------------------------------------//
-//				Обычный снаряд					//
-//----------------------------------------------//
-//----------------------------------------------//
-NormalMissile::NormalMissile() {
-	_missileType = "Normal";
-	_position = FPoint(0, 0);
-	_targetPosition = FPoint(0, 0);
-	_speed = FPoint(0, 0);
-	_modSpeed = 0;
-	_flyTime = 0;
-	_missileTimer = 0;
-	_fly = true;
-	_hit = false;
-	_missilePathX.Clear();
-	_missilePathY.Clear();
-	_tex = nullptr;
-	_target = nullptr;
-};
-
-NormalMissile::NormalMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, Render::TexturePtr tex) {
-	
-	_missileType = "Normal";
-	_position = position;
-	_targetPosition = target->HitPosition(fTime);
-	_speed = FPoint(0, 0);
-	_modSpeed = mSpeed;
-	_flyTime = fTime;
-	_missileTimer = mFlyTimer;
-	_fly = true;
-	_hit = false;
-	_tex = tex;
-
+void FireParent::MakePath() {
 	_missilePathX.Clear();
 	_missilePathY.Clear();
 	if (_flyTime == 0 && _missileTimer == 0 && _modSpeed > 0) {
@@ -162,6 +106,46 @@ NormalMissile::NormalMissile(FPoint position, MonsterParent * target, int mSpeed
 	}
 	_missilePathX.CalculateGradient();
 	_missilePathY.CalculateGradient();
+};
+
+
+//----------------------------------------------//
+//----------------------------------------------//
+//				Обычный снаряд					//
+//----------------------------------------------//
+//----------------------------------------------//
+NormalMissile::NormalMissile() {
+	_missileType = "Normal";
+	_position = FPoint(0, 0);
+	_targetPosition = FPoint(0, 0);
+	_speed = FPoint(0, 0);
+	_modSpeed = 0;
+	_flyTime = 0;
+	_missileTimer = 0;
+	_fly = true;
+	_hit = false;
+	_missilePathX.Clear();
+	_missilePathY.Clear();
+	_tex = nullptr;
+	_target = nullptr;
+	_damage = IPoint(0, 0);
+};
+
+NormalMissile::NormalMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, IPoint dmg, Render::TexturePtr tex) {
+	
+	_missileType = "Normal";
+	_position = position;
+	_targetPosition = target->HitPosition(fTime);
+	_speed = FPoint(0, 0);
+	_modSpeed = mSpeed;
+	_flyTime = fTime;
+	_missileTimer = mFlyTimer;
+	_fly = true;
+	_hit = false;
+	_tex = tex;
+	_damage = dmg;
+	_target = target;
+	MakePath();
 };
 
 
@@ -187,6 +171,7 @@ void NormalMissile::Update(float dt) {
 	if (_missileTimer >= _flyTime && !_hit) {
 		_hit = true;
 		_fly = false;
+		_target->TakeDamage(_missileType, FPoint(0,0), math::random(_damage.x, _damage.y));
 	}
 	else {
 		_missileTimer += dt;
@@ -215,10 +200,13 @@ SlowMissile::SlowMissile() {
 	_missilePathX.Clear();
 	_missilePathY.Clear();
 	_tex = nullptr;
+	_slow = FPoint(0,0);
+	_splashRange = 0;
+	_damage = IPoint(0, 0);
 	
 };
 
-SlowMissile::SlowMissile(FPoint position, FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, float sFactor, int sRange, Render::TexturePtr tex) {
+SlowMissile::SlowMissile(FPoint position, FPoint tPosition, std::vector<boost::intrusive_ptr<MonsterParent>> * targets, int mSpeed, float fTime, float mFlyTimer, FPoint sFactor, int sRange, IPoint dmg, Render::TexturePtr tex) {
 	_missileType = "Slow";
 	_position = position;
 	_targetPosition = tPosition;
@@ -229,28 +217,13 @@ SlowMissile::SlowMissile(FPoint position, FPoint tPosition, int mSpeed, float fT
 	_fly = true;
 	_hit = false;
 	_tex = tex;
-	_slowFactor = sFactor;
+	_slow = sFactor;
 	_splashRange = sRange;
+	_targets = targets;
 	_missilePathX.Clear();
 	_missilePathY.Clear();
-	if (_flyTime == 0 && _missileTimer == 0 && _modSpeed > 0) {
-		float distance = sqrt((_position.x - _targetPosition.x)*(_position.x - _targetPosition.x) + (_position.y - _targetPosition.y)*(_position.y - _targetPosition.y));
-		float time = distance / (float)_modSpeed;
-		_flyTime = time;
-		_missileTimer = 0;
-		_missilePathX.addKey(0, _position.x);
-		_missilePathY.addKey(0, _position.y);
-		_missilePathX.addKey(time, _targetPosition.x);
-		_missilePathY.addKey(time, _targetPosition.y);
-	}
-	else {
-		_missilePathX.addKey(_missileTimer, _position.x);
-		_missilePathY.addKey(_missileTimer, _position.y);
-		_missilePathX.addKey(_flyTime, _targetPosition.x);
-		_missilePathY.addKey(_flyTime, _targetPosition.y);
-	}
-	_missilePathX.CalculateGradient();
-	_missilePathY.CalculateGradient();
+	_damage = dmg;
+	MakePath();
 };
 
 SlowMissile::~SlowMissile() {
@@ -274,6 +247,13 @@ void SlowMissile::Update(float dt) {
 	if (_missileTimer >= _flyTime && !_hit) {
 		_hit = true;
 		_fly = false;
+		for (int i = 0; i < _targets->size(); i++) {
+			FPoint tPos = (*_targets)[i]->Position();
+			float d = sqrt((tPos.x - _position.x)*(tPos.x - _position.x) + (tPos.y - _position.y)*(tPos.y - _position.y));
+			if (d < _splashRange) {
+				(*_targets)[i]->TakeDamage(_missileType, _slow, math::random(_damage.x, _damage.y));
+			}
+		}
 	}
 	else {
 		_missileTimer += dt;
@@ -283,11 +263,218 @@ void SlowMissile::Update(float dt) {
 };
 
 
+//----------------------------------------------//
+//----------------------------------------------//
+//				Отравляющий снаряд				//
+//----------------------------------------------//
+//----------------------------------------------//
 
+DecayMissile::DecayMissile() {
+	_missileType = "Decay";
+	_position = FPoint(0, 0);
+	_targetPosition = FPoint(0, 0);
+	_speed = FPoint(0, 0);
+	_modSpeed = 0;
+	_flyTime = 0;
+	_missileTimer = 0;
+	_fly = true;
+	_hit = false;
+	_missilePathX.Clear();
+	_missilePathY.Clear();
+	_decay = FPoint(0,0);
+	_tex = nullptr;
+	_target = nullptr;
+	_damage = IPoint(0, 0);
+};
+DecayMissile::DecayMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, FPoint decayFactor, IPoint dmg, Render::TexturePtr tex) {
+	_missileType = "Decay";
+	_position = position;
+	_targetPosition = target->HitPosition(fTime);
+	_speed = FPoint(0, 0);
+	_modSpeed = mSpeed;
+	_flyTime = fTime;
+	_missileTimer = mFlyTimer;
+	_fly = true;
+	_hit = false;
+	_tex = tex;
+	_target = target;
+	_decay = decayFactor;
+	_damage = dmg;
+	MakePath();
+};
+DecayMissile::~DecayMissile() {};
 
+void DecayMissile::Draw() {
+	if (_tex) {
+		_tex->Draw(_position);
+	}
+	else {
+		IRect cRect = IRect(_position.x - 1, _position.y - 1, 3, 3);
+		//Render::device.SetTexturing(false);
+		Render::BeginColor(Color(255, 200, 100, 255));
+		Render::DrawRect(cRect);
+		Render::EndColor();
+		//Render::device.SetTexturing(true);
+	}
+};
+void DecayMissile::Update(float dt) {
+	if (_missileTimer >= _flyTime && !_hit) {
+		
+		_hit = true;
+		_fly = false;
+		_target->TakeDamage(_missileType, _decay, math::random(_damage.x, _damage.y));
+		
+	}
+	else {
+		_missileTimer += dt;
+		_position.x = _missilePathX.getGlobalFrame(_missileTimer);
+		_position.y = _missilePathY.getGlobalFrame(_missileTimer);
+	}
 
+};
 
+//----------------------------------------------//
+//----------------------------------------------//
+//				Оглушающий снаряд				//
+//----------------------------------------------//
+//----------------------------------------------//
 
+BashMissile::BashMissile() {
+	_missileType = "Bash";
+	_position = FPoint(0, 0);
+	_targetPosition = FPoint(0, 0);
+	_speed = FPoint(0, 0);
+	_modSpeed = 0;
+	_flyTime = 0;
+	_missileTimer = 0;
+	_fly = true;
+	_hit = false;
+	_missilePathX.Clear();
+	_missilePathY.Clear();
+	_bash = FPoint(0,0);
+	_tex = nullptr;
+	_target = nullptr;
+	_damage = IPoint(0, 0);
+};
+BashMissile::BashMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, FPoint bash, IPoint dmg, Render::TexturePtr tex) {
+	_missileType = "Bash";
+	_position = position;
+	_targetPosition = target->HitPosition(fTime);
+	_speed = FPoint(0, 0);
+	_modSpeed = mSpeed;
+	_flyTime = fTime;
+	_missileTimer = mFlyTimer;
+	_fly = true;
+	_hit = false;
+	_tex = tex;
+	_bash = bash;
+	_target = target;
+	_damage = dmg;
+	MakePath();
+};
+BashMissile::~BashMissile() {};
+
+void BashMissile::Draw() {
+	if (_tex) {
+		_tex->Draw(_position);
+	}
+	else {
+		IRect cRect = IRect(_position.x - 1, _position.y - 1, 3, 3);
+		//Render::device.SetTexturing(false);
+		Render::BeginColor(Color(255, 200, 100, 255));
+		Render::DrawRect(cRect);
+		Render::EndColor();
+		//Render::device.SetTexturing(true);
+	}
+};
+void BashMissile::Update(float dt) {
+	if (_missileTimer >= _flyTime && !_hit) {
+		_hit = true;
+		_fly = false;
+		_target->TakeDamage(_missileType, _bash, math::random(_damage.x, _damage.y));
+	}
+	else {
+		_missileTimer += dt;
+		_position.x = _missilePathX.getGlobalFrame(_missileTimer);
+		_position.y = _missilePathY.getGlobalFrame(_missileTimer);
+	}
+};
+
+//----------------------------------------------//
+//----------------------------------------------//
+//				Разрывной снаряд				//
+//----------------------------------------------//
+//----------------------------------------------//
+SplashMissile::SplashMissile() {
+	_missileType = "Splash";
+	_position = FPoint(0, 0);
+	_targetPosition = FPoint(0, 0);
+	_speed = FPoint(0, 0);
+	_modSpeed = 0;
+	_flyTime = 0;
+	_missileTimer = 0;
+	_fly = true;
+	_hit = false;
+	_missilePathX.Clear();
+	_missilePathY.Clear();
+	_tex = nullptr;
+	_splashRange = 0;
+	_damage = IPoint(0, 0);
+	
+	
+};
+SplashMissile::SplashMissile(FPoint position, FPoint tPosition, std::vector<boost::intrusive_ptr<MonsterParent>> * targets, int mSpeed, float fTime, float mFlyTimer, int sRange, IPoint dmg, Render::TexturePtr tex) {
+	_missileType = "Splash";
+	_position = position;
+	_targetPosition = tPosition;
+	_speed = FPoint(0, 0);
+	_modSpeed = mSpeed;
+	_flyTime = fTime;
+	_missileTimer = mFlyTimer;
+	_fly = true;
+	_hit = false;
+	_tex = tex;
+	_splashRange = sRange;
+	_targets = targets;
+	_missilePathX.Clear();
+	_missilePathY.Clear();
+	_damage = dmg;
+	MakePath();
+};
+SplashMissile::~SplashMissile() {};
+
+void SplashMissile::Draw() {
+	if (_tex) {
+		_tex->Draw(_position);
+	}
+	else {
+		IRect cRect = IRect(_position.x - 1, _position.y - 1, 3, 3);
+		//Render::device.SetTexturing(false);
+		Render::BeginColor(Color(255, 200, 100, 255));
+		Render::DrawRect(cRect);
+		Render::EndColor();
+		//Render::device.SetTexturing(true);
+	}
+};
+void SplashMissile::Update(float dt) {
+	if (_missileTimer >= _flyTime && !_hit) {
+		_hit = true;
+		_fly = false;
+		for (int i = 0; i < _targets->size(); i++) {
+			FPoint tPos = (*_targets)[i]->Position();
+			float d = sqrt((tPos.x - _position.x)*(tPos.x - _position.x) + (tPos.y - _position.y)*(tPos.y - _position.y));
+			if (d < _splashRange) {
+
+				(*_targets)[i]->TakeDamage(_missileType, FPoint(0,0),math::random(_damage.x, _damage.y));
+			}
+		}
+	}
+	else {
+		_missileTimer += dt;
+		_position.x = _missilePathX.getGlobalFrame(_missileTimer);
+		_position.y = _missilePathY.getGlobalFrame(_missileTimer);
+	}
+};
 
 
 
