@@ -6,10 +6,15 @@
 //----------Снаряды---------//
 //--------------------------//
 //////////////////////////////
+//----------------------------------------------//
+//----------------------------------------------//
+//			Базовый класс снаряда				//
+//----------------------------------------------//
+//----------------------------------------------//
 
 class FireParent {
 public:
-
+	typedef boost::intrusive_ptr<FireParent> Ptr;
 	FireParent();
 	FireParent(FPoint position,FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, std::string mType, IPoint dmg, Render::TexturePtr tex);
 	~FireParent() {};
@@ -55,6 +60,11 @@ inline void intrusive_ptr_add_ref(FireParent* e) { e->AddRef(); }
 inline void intrusive_ptr_release(FireParent* e) { e->Release(); }
 
 
+//----------------------------------------------//
+//----------------------------------------------//
+//				Обычный снаряд					//
+//----------------------------------------------//
+//----------------------------------------------//
 class NormalMissile : public FireParent {
 public:
 	NormalMissile();
@@ -67,10 +77,16 @@ private:
 	MonsterParent * _target;
 };
 
+
+//----------------------------------------------//
+//----------------------------------------------//
+//				Замедляющий снаряд				//
+//----------------------------------------------//
+//----------------------------------------------//
 class SlowMissile : public FireParent {
 public:
 	SlowMissile();
-	SlowMissile(FPoint position, FPoint tPosition, std::vector<boost::intrusive_ptr<MonsterParent>> * targets, int mSpeed, float fTime, float mFlyTimer, FPoint sFactor, int sRange, IPoint dmg, Render::TexturePtr tex);
+	SlowMissile(FPoint position, FPoint tPosition, std::vector<MonsterParent::Ptr> & targets, int mSpeed, float fTime, float mFlyTimer, FPoint sFactor, int sRange, IPoint dmg, Render::TexturePtr tex);
 	~SlowMissile();
 
 	void Draw();
@@ -79,10 +95,16 @@ public:
 private:
 	FPoint _slow;
 	int _splashRange;
-	std::vector<boost::intrusive_ptr<MonsterParent>> * _targets;
+	std::vector<MonsterParent::Ptr> _targets;
 	
 };
 
+
+//----------------------------------------------//
+//----------------------------------------------//
+//				Отравляющий снаряд				//
+//----------------------------------------------//
+//----------------------------------------------//
 class DecayMissile : public FireParent {
 public:
 	DecayMissile();
@@ -98,6 +120,11 @@ private:
 	FPoint decay;
  };
 
+//----------------------------------------------//
+//----------------------------------------------//
+//				Оглушающий снаряд				//
+//----------------------------------------------//
+//----------------------------------------------//
 class BashMissile : public FireParent {
 public:
 	BashMissile();
@@ -111,17 +138,23 @@ private:
 	FPoint _bash;
 };
 
+
+//----------------------------------------------//
+//----------------------------------------------//
+//				Разрывной снаряд				//
+//----------------------------------------------//
+//----------------------------------------------//
 class SplashMissile : public FireParent {
 public:
 	SplashMissile();
-	SplashMissile(FPoint position, FPoint tPosition, std::vector<boost::intrusive_ptr<MonsterParent>> * targets, int mSpeed, float fTime, float mFlyTimer, int sRange, IPoint dmg, Render::TexturePtr tex);
+	SplashMissile(FPoint position, FPoint tPosition, std::vector<MonsterParent::Ptr> & targets, int mSpeed, float fTime, float mFlyTimer, int sRange, IPoint dmg, Render::TexturePtr tex);
 	~SplashMissile();
 
 	void Draw();
 	void Update(float dt);
 private:
 	int _splashRange;
-	std::vector<boost::intrusive_ptr<MonsterParent>> * _targets;
+	std::vector<MonsterParent::Ptr> _targets;
 };
 
 

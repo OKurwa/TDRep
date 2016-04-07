@@ -12,6 +12,7 @@ MonsterParent::MonsterParent() {
 	_speed = FPoint(0, 0);
 	_modSpeed = 0;
 	_hp = 0;
+	_maxHp = _hp;
 	_moveTimer = 0;
 	_curWayDistance = 0;
 	_damaged = false ;
@@ -20,6 +21,7 @@ MonsterParent::MonsterParent() {
 	_curWaySplineX.Clear();
 	_curWaySplineY.Clear();
 	_dead = false;
+	_finish = false;
 };
 
 MonsterParent::MonsterParent(FPoint position, int modSpeed, int hp, FieldMap * map, Render::TexturePtr skin) {
@@ -72,10 +74,12 @@ MonsterParent::MonsterParent(FPoint position, int modSpeed, int hp, FieldMap * m
 	
 	
 	_hp = hp;
+	_maxHp = _hp;
 	_damaged = false;
 	
 	_skin = skin;
 	_dead = false;
+	_finish = false;
 };
 MonsterParent::~MonsterParent() {};
 
@@ -94,6 +98,8 @@ void MonsterParent::Draw() {
 void MonsterParent::Update(float dt) {
 	_moveTimer += dt;
 	_curWayDistance -= _modSpeed*dt;
+	if (_curWayDistance <= 0)
+		_finish = true;
 	_position.x = _curWaySplineX.getGlobalFrame(_moveTimer);
 	_position.y = _curWaySplineY.getGlobalFrame(_moveTimer);
 	
@@ -250,6 +256,10 @@ bool MonsterParent::Dead() {
 	return _dead;
 };
 
+bool MonsterParent::Finish() {
+	return _finish;
+};
+
 
 float MonsterParent::WayDistance() {
 	return _curWayDistance;
@@ -280,6 +290,7 @@ NormalMonster::NormalMonster() {
 	_speed = FPoint(0, 0);
 	_modSpeed = 0;
 	_hp = 0;
+	_maxHp = _hp;
 	_moveTimer = 0;
 	_curWayDistance = 0;
 	_damaged = false;
@@ -288,6 +299,7 @@ NormalMonster::NormalMonster() {
 	_curWaySplineX.Clear();
 	_curWaySplineY.Clear();
 	_dead = false;
+	_finish = false;
 };
 NormalMonster::NormalMonster(FPoint position, int modSpeed, int hp, FieldMap * map, Render::TexturePtr skin) {
 	_position = position;
@@ -343,10 +355,12 @@ NormalMonster::NormalMonster(FPoint position, int modSpeed, int hp, FieldMap * m
 
 
 	_hp = hp;
+	_maxHp = _hp;
 	_damaged = false;
 
 	_skin = skin;
 	_dead = false;
+	_finish = false;
 };
 NormalMonster::~NormalMonster() {
 };
@@ -402,6 +416,8 @@ void NormalMonster::Update(float dt) {
 
 	_moveTimer += edt;
 	_curWayDistance -= _modSpeed*edt;
+	if (_curWayDistance <= 0)
+		_finish = true;
 	_position.x = _curWaySplineX.getGlobalFrame(_moveTimer);
 	_position.y = _curWaySplineY.getGlobalFrame(_moveTimer);
 };
@@ -434,6 +450,7 @@ BossMonster::BossMonster() {
 	_speed = FPoint(0, 0);
 	_modSpeed = 0;
 	_hp = 0;
+	_maxHp = _hp;
 	_moveTimer = 0;
 	_curWayDistance = 0;
 	_damaged = false;
@@ -443,6 +460,7 @@ BossMonster::BossMonster() {
 	_curWaySplineY.Clear();
 	_dead = false;
 	_reduceDamage = 0;
+	_finish = false;
 };
 BossMonster::BossMonster(FPoint position, int modSpeed, int hp, FieldMap * map, float reduceDamage, Render::TexturePtr skin) {
 	_position = position;
@@ -498,17 +516,19 @@ BossMonster::BossMonster(FPoint position, int modSpeed, int hp, FieldMap * map, 
 
 
 	_hp = hp;
+	_maxHp = _hp;
 	_damaged = false;
 
 	_skin = skin;
 	_dead = false;
 	_reduceDamage = reduceDamage;
+	_finish = false;
 };
 BossMonster::~BossMonster() {
 };
 
 void BossMonster::Draw() {
-	if (!_dead) {
+	if (!_dead && !_finish) {
 		IRect cRect = IRect(_position.x - 2, _position.y - 2, 5, 5);
 		//Render::device.SetTexturing(false);
 		Render::BindFont("arial");
@@ -558,22 +578,24 @@ void BossMonster::Update(float dt) {
 
 	_moveTimer += edt;
 	_curWayDistance -= _modSpeed*edt;
+	if (_curWayDistance <= 0)
+		_finish = true;
 	_position.x = _curWaySplineX.getGlobalFrame(_moveTimer);
 	_position.y = _curWaySplineY.getGlobalFrame(_moveTimer);
 };
 void BossMonster::TakeDamage(std::string effType, FPoint values, float damage) {
 	
-	values.y *= 1 - _reduceDamage;
+	//values.y *= 1 - _reduceDamage;
 	
 	if (effType == "Slow")
 		_slow = values;
 	if (effType == "Decay")
-		_decay = values;
-	if (effType == "Bash") {
-		values.x *= 100;
-		if (math::random(0, 100) <= values.x)
-			_bash = FPoint(1, values.y);
-	}
+		_decay =FPoint(values.x*2, values.y*2);
+	//if (effType == "Bash") {
+	//	values.x *= 100;
+	//	if (math::random(0, 100) <= values.x)
+	//		_bash = FPoint(1, values.y);
+	//}
 
 	if (_hp > 0) {
 		_hp -= damage * (1 - _reduceDamage);
@@ -597,6 +619,7 @@ ImmuneMonster::ImmuneMonster() {
 	_speed = FPoint(0, 0);
 	_modSpeed = 0;
 	_hp = 0;
+	_maxHp = _hp;
 	_moveTimer = 0;
 	_curWayDistance = 0;
 	_damaged = false;
@@ -605,6 +628,7 @@ ImmuneMonster::ImmuneMonster() {
 	_curWaySplineX.Clear();
 	_curWaySplineY.Clear();
 	_dead = false;
+	_finish = false;
 };
 ImmuneMonster::ImmuneMonster(FPoint position, int modSpeed, int hp, FieldMap * map, Render::TexturePtr skin) {
 	_position = position;
@@ -660,10 +684,12 @@ ImmuneMonster::ImmuneMonster(FPoint position, int modSpeed, int hp, FieldMap * m
 
 
 	_hp = hp;
+	_maxHp = _hp;
 	_damaged = false;
 
 	_skin = skin;
 	_dead = false;
+	_finish = false;
 };
 ImmuneMonster::~ImmuneMonster() {
 };
@@ -719,6 +745,8 @@ void ImmuneMonster::Update(float dt) {
 
 	_moveTimer += edt;
 	_curWayDistance -= _modSpeed*edt;
+	if (_curWayDistance <= 0)
+		_finish = true;
 	_position.x = _curWaySplineX.getGlobalFrame(_moveTimer);
 	_position.y = _curWaySplineY.getGlobalFrame(_moveTimer);
 };
@@ -727,12 +755,15 @@ void ImmuneMonster::TakeDamage(std::string effType, FPoint values, float damage)
 	
 	//if (effType == "Slow")
 	//	_slow = values;
-	//if (effType == "Decay")
-	//	_decay = values;
+	if (effType == "Decay")
+		_decay = values;
 	if (effType == "Bash") {
 		values.x *= 100;
-		if (math::random(0, 100) <= values.x)
-			_bash = FPoint(1, values.y);
+		if (math::random(0, 100) <= values.x) {
+			_bash = FPoint(1, values.y * 2);
+			damage *= 2;
+		}
+			
 	}
 
 	if (_hp > 0) {
@@ -752,6 +783,7 @@ HealingMonster::HealingMonster() {
 	_speed = FPoint(0, 0);
 	_modSpeed = 0;
 	_hp = 0;
+	_maxHp = _hp;
 	_moveTimer = 0;
 	_curWayDistance = 0;
 	_damaged = false;
@@ -816,11 +848,13 @@ HealingMonster::HealingMonster(FPoint position, int modSpeed, int hp, FieldMap *
 
 
 	_hp = hp;
+	_maxHp = _hp;
 	_damaged = false;
 
 	_skin = skin;
 	_dead = false;
 	_healPerSecond = healPerSecond;
+	_finish = false;
 };
 HealingMonster::~HealingMonster() {
 };
@@ -871,22 +905,33 @@ void HealingMonster::Update(float dt) {
 	if (_hp <= 0) {
 		_dead = true;
 	}
-	if (!_dead)
+	if (!_dead) {
 		_hp += dt *_healPerSecond;
+		if(_hp>_maxHp)
+		_hp =_maxHp;
+	}
+		
 
 	float edt = dt;
 	edt *= (1 - _slow.x)*(1 - _bash.x);
 
 	_moveTimer += edt;
 	_curWayDistance -= _modSpeed*edt;
+	if (_curWayDistance <= 0)
+		_finish = true;
 	_position.x = _curWaySplineX.getGlobalFrame(_moveTimer);
 	_position.y = _curWaySplineY.getGlobalFrame(_moveTimer);
 };
 void HealingMonster::TakeDamage(std::string effType, FPoint values, float damage) {
-	if (effType == "Slow")
-		_slow = values;
-	if (effType == "Decay")
-		_decay = values;
+	if (effType == "Slow") {
+		_slow = FPoint(values.x * 2, values.y*1.5);
+		if (_slow.x > 1) {
+			_slow.x = 1;
+		}
+	}
+		
+	//if (effType == "Decay")
+	//	_decay = values;
 	if (effType == "Bash") {
 		values.x *= 100;
 		if (math::random(0, 100) <= values.x)

@@ -5,13 +5,7 @@
 #include "FireParent.h"
 #include "TowerParent.h"
 #include "MonsterParent.h"
-enum TowerType {
-	Normal,
-	Splash,
-	Slow,
-	Decay,
-	Bash
-};
+#include "World.h"
 ///
 /// Виджет - основной визуальный элемент на экране.
 /// Он отрисовывает себя, а также может содержать другие виджеты.

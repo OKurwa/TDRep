@@ -71,7 +71,7 @@ void TowerParent::Update(float dt) {
 	for (int i = 0; i < _missiles.size(); i++) {
 		_missiles[i]->Update(dt);
 	}
-	for (std::vector<boost::intrusive_ptr<FireParent>>::iterator it = _missiles.begin(); it != _missiles.end();) {
+	for (std::vector<FireParent::Ptr>::iterator it = _missiles.begin(); it != _missiles.end();) {
 		if ((*it)->Hit()) {
 			it = _missiles.erase(it);
 		}
@@ -84,7 +84,7 @@ void TowerParent::Update(float dt) {
 
 bool TowerParent::Shoot() {
 	if (_reloadTimer == 0 && _target) {
-		boost::intrusive_ptr<FireParent> mis = new NormalMissile(_position, _target, 0, 0.2, 0,_damage, nullptr);
+		FireParent::Ptr mis = new NormalMissile(_position, _target, 0, 0.2, 0,_damage, nullptr);
 		_missiles.push_back(mis);
 		_reloadTimer = _reloadTime;
 		return true;
@@ -95,7 +95,7 @@ bool TowerParent::Shoot() {
 	
 };
 
-std::vector<boost::intrusive_ptr<FireParent>> & TowerParent::GetMissiles() {
+std::vector<FireParent::Ptr> & TowerParent::GetMissiles() {
 	return _missiles;
 };
 
@@ -107,13 +107,14 @@ IPoint TowerParent::Cell() {
 	return _cell;
 };
 
-bool TowerParent::TakeAim(std::vector<boost::intrusive_ptr<MonsterParent>> * monsters) {
-	if(_target == nullptr || _target->Dead()){
+bool TowerParent::TakeAim(std::vector<MonsterParent::Ptr> & monsters) {
+	
+	if(_target==nullptr || _target ->Finish() || _target->Dead()){
 		float d = 9999;
 		int tarIndex = 9999;
-		for (int i = 0; i < monsters->size(); i++) {
-			if (!(*monsters)[i].get()->Dead()) {
-				FPoint tarPos = (*monsters)[i]->Position();
+		for (int i = 0; i < monsters.size(); i++) {
+			if (!monsters[i].get()->Dead()) {
+				FPoint tarPos = monsters[i]->Position();
 				float tmpD = sqrt((tarPos.x - _position.x)*(tarPos.x - _position.x) + (tarPos.y - _position.y)*(tarPos.y - _position.y));
 				if (tmpD<d) {
 					d = tmpD;
@@ -123,7 +124,7 @@ bool TowerParent::TakeAim(std::vector<boost::intrusive_ptr<MonsterParent>> * mon
 			
 		}
 		if (d <= _range && tarIndex < 9999) {
-			_target = (*monsters)[tarIndex].get();
+			_target = monsters[tarIndex].get();
 			return true;
 		}
 		else {
@@ -223,7 +224,7 @@ void NormalTower::Update(float dt) {
 	for (int i = 0; i < _missiles.size(); i++) {
 		_missiles[i]->Update(dt);
 	}
-	for (std::vector<boost::intrusive_ptr<FireParent>>::iterator it = _missiles.begin(); it != _missiles.end();) {
+	for (std::vector<FireParent::Ptr>::iterator it = _missiles.begin(); it != _missiles.end();) {
 		if ((*it)->Hit()) {
 			it = _missiles.erase(it);
 		}
@@ -236,7 +237,7 @@ void NormalTower::Update(float dt) {
 };
 bool NormalTower::Shoot() {
 	if (_reloadTimer == 0 && _target) {
-		boost::intrusive_ptr<FireParent> mis = new NormalMissile(_position, _target, 0, 0.2, 0, _damage, nullptr);
+		FireParent::Ptr mis = new NormalMissile(_position, _target, 0, 0.2, 0, _damage, nullptr);
 		_missiles.push_back(mis);
 		_reloadTimer = _reloadTime;
 		return true;
@@ -266,9 +267,9 @@ SlowTower::SlowTower() {
 	_splashRange = 0;
 	_slow = FPoint(0, 0);
 	_damage = IPoint(0, 0);
-	_targets = nullptr;
+	//_targets = nullptr;
 };
-SlowTower::SlowTower(FPoint position, IPoint cell, std::vector<boost::intrusive_ptr<MonsterParent>> * targets, float rTime, float rTimer, int range, int sRange, FPoint sFactor, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
+SlowTower::SlowTower(FPoint position, IPoint cell, std::vector<MonsterParent::Ptr> & targets, float rTime, float rTimer, int range, int sRange, FPoint sFactor, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
 	_towerType = "Slow";
 	_position = position;
 	_cell = cell;
@@ -319,7 +320,7 @@ void SlowTower::Update(float dt) {
 	for (int i = 0; i < _missiles.size(); i++) {
 		_missiles[i]->Update(dt);
 	}
-	for (std::vector<boost::intrusive_ptr<FireParent>>::iterator it = _missiles.begin(); it != _missiles.end();) {
+	for (std::vector<FireParent::Ptr>::iterator it = _missiles.begin(); it != _missiles.end();) {
 		if ((*it)->Hit()) {
 			it = _missiles.erase(it);
 		}
@@ -332,7 +333,7 @@ void SlowTower::Update(float dt) {
 
 bool SlowTower::Shoot() {
 	if (_reloadTimer == 0 && _target) {
-		boost::intrusive_ptr<FireParent> mis = new SlowMissile(_position, _target->Position(), _targets, 0, 0.5, 0, _slow, 30, _damage, nullptr);
+		FireParent::Ptr mis = new SlowMissile(_position, _target->Position(), _targets, 0, 0.5, 0, _slow, 30, _damage, nullptr);
 		_missiles.push_back(mis);
 		_reloadTimer = _reloadTime;
 		return true;
@@ -342,13 +343,14 @@ bool SlowTower::Shoot() {
 	}
 };
 
-bool SlowTower::TakeAim(std::vector<boost::intrusive_ptr<MonsterParent>> * monsters) {
-	if (_target == nullptr || _target->Dead()) {
+bool SlowTower::TakeAim(std::vector<MonsterParent::Ptr> & monsters) {
+	_targets = monsters;
+	if (_target == nullptr || _target->Finish() || _target->Dead()) {
 		float d = 9999;
 		int tarIndex = 9999;
-		for (int i = 0; i < monsters->size(); i++) {
-			if (!(*monsters)[i].get()->Dead()) {
-				FPoint tarPos = (*monsters)[i]->Position();
+		for (int i = 0; i < monsters.size(); i++) {
+			if (!monsters[i].get()->Dead()) {
+				FPoint tarPos = monsters[i]->Position();
 				float tmpD = sqrt((tarPos.x - _position.x)*(tarPos.x - _position.x) + (tarPos.y - _position.y)*(tarPos.y - _position.y));
 				if (tmpD<d) {
 					d = tmpD;
@@ -358,7 +360,7 @@ bool SlowTower::TakeAim(std::vector<boost::intrusive_ptr<MonsterParent>> * monst
 
 		}
 		if (d <= _range && tarIndex < 9999) {
-			_target = (*monsters)[tarIndex].get();
+			_target = monsters[tarIndex].get();
 			return true;
 		}
 		else {
@@ -451,7 +453,7 @@ void DecayTower::Update(float dt) {
 	for (int i = 0; i < _missiles.size(); i++) {
 		_missiles[i]->Update(dt);
 	}
-	for (std::vector<boost::intrusive_ptr<FireParent>>::iterator it = _missiles.begin(); it != _missiles.end();) {
+	for (std::vector<FireParent::Ptr>::iterator it = _missiles.begin(); it != _missiles.end();) {
 		if ((*it)->Hit()) {
 			it = _missiles.erase(it);
 		}
@@ -464,7 +466,7 @@ void DecayTower::Update(float dt) {
 
 bool DecayTower::Shoot() {
 	if (_reloadTimer == 0 && _target) {
-		boost::intrusive_ptr<FireParent> mis = new DecayMissile(_position,_target,0,0.1,0, _decay, _damage, nullptr);
+		FireParent::Ptr mis = new DecayMissile(_position,_target,0,0.1,0, _decay, _damage, nullptr);
 		_missiles.push_back(mis);
 		_reloadTimer = _reloadTime;
 		return true;
@@ -542,7 +544,7 @@ void BashTower::Update(float dt) {
 	for (int i = 0; i < _missiles.size(); i++) {
 		_missiles[i]->Update(dt);
 	}
-	for (std::vector<boost::intrusive_ptr<FireParent>>::iterator it = _missiles.begin(); it != _missiles.end();) {
+	for (std::vector<FireParent::Ptr>::iterator it = _missiles.begin(); it != _missiles.end();) {
 		if ((*it)->Hit()) {
 			it = _missiles.erase(it);
 		}
@@ -555,7 +557,7 @@ void BashTower::Update(float dt) {
 
 bool BashTower::Shoot() {
 	if (_reloadTimer == 0 && _target) {
-		boost::intrusive_ptr<FireParent> mis = new BashMissile(_position, _target, 0, 0.3, 0,_bash, _damage, nullptr);
+		FireParent::Ptr mis = new BashMissile(_position, _target, 0, 0.3, 0,_bash, _damage, nullptr);
 		_missiles.push_back(mis);
 		_reloadTimer = _reloadTime;
 		return true;
@@ -587,11 +589,11 @@ SplashTower::SplashTower() {
 	_missiles.clear();
 	_tex = nullptr;
 	_splashRange = 0;
-	_targets = nullptr;
+	//_targets = nullptr;
 	_damage = IPoint(0,0);
 	
 };
-SplashTower::SplashTower(FPoint position, IPoint cell, std::vector<boost::intrusive_ptr<MonsterParent>> * targets, float rTime, float rTimer, int range, int sRange, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
+SplashTower::SplashTower(FPoint position, IPoint cell, std::vector<MonsterParent::Ptr> & targets, float rTime, float rTimer, int range, int sRange, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
 	_towerType = "Splash";
 	_position = position;
 	_cell = cell;
@@ -641,7 +643,7 @@ void SplashTower::Update(float dt) {
 	for (int i = 0; i < _missiles.size(); i++) {
 		_missiles[i]->Update(dt);
 	}
-	for (std::vector<boost::intrusive_ptr<FireParent>>::iterator it = _missiles.begin(); it != _missiles.end();) {
+	for (std::vector<FireParent::Ptr>::iterator it = _missiles.begin(); it != _missiles.end();) {
 		if ((*it)->Hit()) {
 			it = _missiles.erase(it);
 		}
@@ -654,7 +656,7 @@ void SplashTower::Update(float dt) {
 
 bool SplashTower::Shoot() {
 	if (_reloadTimer == 0 && _target) {
-		boost::intrusive_ptr<FireParent> mis = new SplashMissile(_position, _target->Position(), _targets, 0, 0.5, 0, 90, _damage, nullptr);
+		FireParent::Ptr mis = new SplashMissile(_position, _target->Position(), _targets, 0, 0.5, 0, 90, _damage, nullptr);
 		_missiles.push_back(mis);
 		_reloadTimer = _reloadTime;
 		return true;
@@ -664,13 +666,15 @@ bool SplashTower::Shoot() {
 	}
 };
 
-bool SplashTower::TakeAim(std::vector<boost::intrusive_ptr<MonsterParent>> * monsters) {
-	if (_target == nullptr || _target->Dead()) {
+bool SplashTower::TakeAim(std::vector<MonsterParent::Ptr> & monsters) {
+	_targets = monsters;
+	
+	if (_target == nullptr || _target->Finish() || _target->Dead()) {
 		float d = 9999;
 		int tarIndex = 9999;
-		for (int i = 0; i < monsters->size(); i++) {
-			if (!(*monsters)[i].get()->Dead()) {
-				FPoint tarPos = (*monsters)[i]->Position();
+		for (int i = 0; i < monsters.size(); i++) {
+			if (!monsters[i].get()->Dead()) {
+				FPoint tarPos = monsters[i]->Position();
 				float tmpD = sqrt((tarPos.x - _position.x)*(tarPos.x - _position.x) + (tarPos.y - _position.y)*(tarPos.y - _position.y));
 				if (tmpD<d) {
 					d = tmpD;
@@ -680,7 +684,7 @@ bool SplashTower::TakeAim(std::vector<boost::intrusive_ptr<MonsterParent>> * mon
 
 		}
 		if (d <= _range && tarIndex < 9999) {
-			_target = (*monsters)[tarIndex].get();
+			_target = monsters[tarIndex].get();
 			return true;
 		}
 		else {

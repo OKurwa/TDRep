@@ -89,7 +89,7 @@ void FireParent::MakePath() {
 	_missilePathX.Clear();
 	_missilePathY.Clear();
 	if (_flyTime == 0 && _missileTimer == 0 && _modSpeed > 0) {
-		float distance = sqrt((_position.x - _targetPosition.x)*(_position.x - _targetPosition.x) + (_position.y - _targetPosition.y)*(_position.y - _targetPosition.y));
+		float distance = _position.GetDistanceTo(_targetPosition); 
 		float time = distance / (float)_modSpeed;
 		_flyTime = time;
 		_missileTimer = 0;
@@ -206,7 +206,7 @@ SlowMissile::SlowMissile() {
 	
 };
 
-SlowMissile::SlowMissile(FPoint position, FPoint tPosition, std::vector<boost::intrusive_ptr<MonsterParent>> * targets, int mSpeed, float fTime, float mFlyTimer, FPoint sFactor, int sRange, IPoint dmg, Render::TexturePtr tex) {
+SlowMissile::SlowMissile(FPoint position, FPoint tPosition, std::vector<MonsterParent::Ptr> & targets, int mSpeed, float fTime, float mFlyTimer, FPoint sFactor, int sRange, IPoint dmg, Render::TexturePtr tex) {
 	_missileType = "Slow";
 	_position = position;
 	_targetPosition = tPosition;
@@ -247,11 +247,11 @@ void SlowMissile::Update(float dt) {
 	if (_missileTimer >= _flyTime && !_hit) {
 		_hit = true;
 		_fly = false;
-		for (int i = 0; i < _targets->size(); i++) {
-			FPoint tPos = (*_targets)[i]->Position();
+		for (int i = 0; i < _targets.size(); i++) {
+			FPoint tPos = _targets[i]->Position();
 			float d = sqrt((tPos.x - _position.x)*(tPos.x - _position.x) + (tPos.y - _position.y)*(tPos.y - _position.y));
 			if (d < _splashRange) {
-				(*_targets)[i]->TakeDamage(_missileType, _slow, math::random(_damage.x, _damage.y));
+				_targets[i]->TakeDamage(_missileType, _slow, math::random(_damage.x, _damage.y));
 			}
 		}
 	}
@@ -423,7 +423,7 @@ SplashMissile::SplashMissile() {
 	
 	
 };
-SplashMissile::SplashMissile(FPoint position, FPoint tPosition, std::vector<boost::intrusive_ptr<MonsterParent>> * targets, int mSpeed, float fTime, float mFlyTimer, int sRange, IPoint dmg, Render::TexturePtr tex) {
+SplashMissile::SplashMissile(FPoint position, FPoint tPosition, std::vector<MonsterParent::Ptr> & targets, int mSpeed, float fTime, float mFlyTimer, int sRange, IPoint dmg, Render::TexturePtr tex) {
 	_missileType = "Splash";
 	_position = position;
 	_targetPosition = tPosition;
@@ -460,12 +460,12 @@ void SplashMissile::Update(float dt) {
 	if (_missileTimer >= _flyTime && !_hit) {
 		_hit = true;
 		_fly = false;
-		for (int i = 0; i < _targets->size(); i++) {
-			FPoint tPos = (*_targets)[i]->Position();
+		for (int i = 0; i < _targets.size(); i++) {
+			FPoint tPos = _targets[i]->Position();
 			float d = sqrt((tPos.x - _position.x)*(tPos.x - _position.x) + (tPos.y - _position.y)*(tPos.y - _position.y));
 			if (d < _splashRange) {
 
-				(*_targets)[i]->TakeDamage(_missileType, FPoint(0,0),math::random(_damage.x, _damage.y));
+				_targets[i]->TakeDamage(_missileType, FPoint(0,0),math::random(_damage.x, _damage.y));
 			}
 		}
 	}

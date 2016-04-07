@@ -4,6 +4,7 @@
 class MonsterParent
 {
 public:
+	typedef boost::intrusive_ptr<MonsterParent> Ptr;
 	MonsterParent();
 	MonsterParent(FPoint position, int modSpeed, int hp, FieldMap * map, Render::TexturePtr _skin);
 	virtual ~MonsterParent();
@@ -13,6 +14,7 @@ public:
 	virtual void TakeDamage(std::string effType, FPoint values, float damage) = 0;
 	bool FindAWay();
 	bool Dead();
+	bool Finish();
 	float WayDistance();
 	FPoint Position();
 	FPoint HitPosition(float dt);
@@ -35,7 +37,9 @@ protected:
 	FPoint	   _speed;
 	int		   _modSpeed;
 	float	   _hp;
+	float	   _maxHp;
 	bool	   _dead;
+	bool       _finish;
 	bool	   _damaged;
 	FieldMap   * _map;
 	IPoint _curCell;

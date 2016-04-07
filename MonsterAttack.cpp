@@ -6,15 +6,20 @@
 using namespace std;
 
 Attack::Attack(){
+	_index = 0;
 	_monsterType = "";
 	_attackName = "";
 	_monsterCount = 0;
+	_maxHp = 0;
+	_modSpeed = 0;
 };
-Attack::Attack(int index, const std::string mType, const std::string aName, const int mCount) {
+Attack::Attack(int index, const std::string mType, const std::string aName, const int mCount, int hp, int speed) {
 	_index = index;
 	_monsterType = mType;
 	_attackName = aName;
 	_monsterCount = mCount;
+	_maxHp = hp;
+	_modSpeed = speed;
 };
 
 Attack::~Attack() {};
@@ -35,6 +40,14 @@ int Attack::Index() {
 	return _index;
 };
 
+int Attack::MaxHp() {
+	return _maxHp;
+};
+
+int	Attack::Speed() {
+	return _modSpeed;
+};
+
 void Attack::SetType(std::string s) {
 	_monsterType = s;
 };
@@ -48,6 +61,13 @@ void Attack::SetIndex(int index) {
 	_index = index;
 };
 
+void Attack::SetMaxHp(int hp) {
+	_maxHp = hp;
+};
+
+void Attack::SetSpeed(int speed) {
+	_modSpeed = speed;
+};
 
 
 MonsterAttack::MonsterAttack() {
@@ -121,6 +141,12 @@ void MonsterAttack::LoadFromFile(std::string file) {
 			}
 			if (name == "count") {
 				_attacks[index].SetCount(utils::lexical_cast<int>(value));
+			}
+			if (name == "hp") {
+				_attacks[index].SetMaxHp(utils::lexical_cast<int>(value));
+			}
+			if (name == "speed") {
+				_attacks[index].SetSpeed(utils::lexical_cast<int>(value));
 			}
 
 		}

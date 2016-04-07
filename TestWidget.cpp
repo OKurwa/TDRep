@@ -93,7 +93,7 @@ void TestWidget::Update(float dt)
 	}
 
 	for (unsigned int i = 0; i < _towers.size(); i++) {
-		if (_towers[i]->TakeAim(&_monsters)) {
+		if (_towers[i]->TakeAim(_monsters)) {
 			_towers[i]->Shoot();
 		}
 	}
@@ -104,15 +104,41 @@ void TestWidget::Update(float dt)
 	//Cпавн
 	if (_curMonsterAttack < _monsterAttack.GetAttack().size()) {
 		if (_monsterAttack.GetAttack()[_curMonsterAttack].Count()>_monsters.size() && _spawnTimer>_spawnTime) {
+			int hp = _monsterAttack.GetAttack()[_curMonsterAttack].MaxHp();
+			int spd = _monsterAttack.GetAttack()[_curMonsterAttack].Speed();
+			MonsterParent::Ptr m;
+			if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Normal") {
+				//Обычный монстр
+				m = new NormalMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr);
+			}
+			else if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Boss") {
+				//Босс
+				m = new BossMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, 0.5, nullptr);
+			}
+			else if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Healing") {
+				//Регенерирующий монстр
+				m = new HealingMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr, 5);
+			}
+			else if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Immune") {
+				//Иммунный монстр
+				m = new ImmuneMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr);
+			}
+			else {
+				//Обычный монстр
+				m = new NormalMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr);
+			}
 			
+
 			//Регенерирующий монстр
 			//boost::intrusive_ptr<MonsterParent> m = new HealingMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), 64, 200, &_fieldMap, nullptr, 5);
 
 			//Иммунный монстр
 			//boost::intrusive_ptr<MonsterParent> m = new ImmuneMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), 64, 200, &_fieldMap, nullptr);
 			
-			//Обычный монстр
-			boost::intrusive_ptr<MonsterParent> m = new NormalMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31),_spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), 64, 600, &_fieldMap, nullptr);
+			//Босс
+			//boost::intrusive_ptr<MonsterParent> m = new BossMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), 64, 600, &_fieldMap, 0.5, nullptr);
+
+			
 			_monsters.push_back(m);
 
 		}
@@ -120,7 +146,7 @@ void TestWidget::Update(float dt)
 	//Проверка окончания волны
 	float endWave = true;
 	for (unsigned int i = 0; i < _monsters.size(); i++) {
-		if (_monsters[i]->WayDistance()>0 && !_monsters[i]->Dead())
+		if (!_monsters[i]->Finish() && !_monsters[i]->Dead())
 			endWave = false;
 	}
 	//Очистка старой и начало новой
@@ -132,7 +158,7 @@ void TestWidget::Update(float dt)
 	if (_spawnTimer > _spawnTime)
 		_spawnTimer = 0;
 	
-
+	
 
 	
 }
@@ -167,17 +193,17 @@ bool TestWidget::MouseDown(const IPoint &mouse_pos)
 	if (Core::mainInput.GetMouseLeftButton()) {
 		if (_fieldMap.AddTower(pos1)) {
 			
-			boost::intrusive_ptr<TowerParent> t;
+			TowerParent::Ptr t;
 			switch (_curTowerType)
 			{
 			case Normal:
 				t = new NormalTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, 0, IPoint(100, 100), nullptr);
 				break;
 			case Splash:
-				t = new SplashTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, &_monsters, 0.5, 0, 192, 60, 0, IPoint(5, 10), nullptr);
+				t = new SplashTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, _monsters, 0.5, 0, 192, 60, 0, IPoint(5, 10), nullptr);
 				break;
 			case Slow:
-				t = new SlowTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, &_monsters, 0.5, 0, 192, 30, FPoint(0.7, 1), 0, IPoint(200, 210), nullptr);
+				t = new SlowTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, _monsters, 0.5, 0, 192, 50, FPoint(0.7, 1), 0, IPoint(10, 30), nullptr);
 				break;
 			case Decay:
 				t = new DecayTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, FPoint(15, 10), 0, IPoint(0, 0), nullptr);
@@ -191,31 +217,7 @@ bool TestWidget::MouseDown(const IPoint &mouse_pos)
 			}
 
 
-
-
-
-
-
-
-
-
-
-
-			//Разрывная, направленная на точку, урон по области радиусом 60 точек
-			//boost::intrusive_ptr<TowerParent> t = new SplashTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, &_monsters, 0.5, 0, 192, 60, 0, IPoint(5, 10), nullptr);
-			
-			//Оглушающая, направленная на монстра, урон по 1 цели, 50% шанс оглушения на 1 секунду
-			//boost::intrusive_ptr<TowerParent> t = new BashTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, FPoint(0.5, 1), 0,IPoint(5, 10), nullptr);
-
-			//Замедляющая, направленная на точку, урон по области радиусом 30 точек, замедление 70% на 1 секунду 
-			//boost::intrusive_ptr<TowerParent> t = new SlowTower(FPoint(pos1.x*cellSize.x + cellSize.x/2, pos1.y*cellSize.y + cellSize.y/2), pos1, &_monsters, 0.5, 0, 192,30, FPoint(0.7,1),0,IPoint(200, 210), nullptr);
-			
-			//Отравляющая, направленная на монстра, урон по времени
-			//boost::intrusive_ptr<TowerParent> t = new DecayTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, FPoint(15,10),0, IPoint(0, 0), nullptr);
-			
-			//Обычная, направленная на монстра, урон по 1 цели
-			//boost::intrusive_ptr<TowerParent> t = new NormalTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, 0,IPoint(100, 100), nullptr);
-			_towers.push_back(t);
+     		_towers.push_back(t);
 		};
 		
 	}
