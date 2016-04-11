@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 using namespace std;
-
+using namespace rapidxml;
 
 FieldCell::FieldCell() : ref_cnt_(0)
 {
@@ -36,9 +36,16 @@ FieldCell& FieldCell::operator = (const FieldCell& cell) {
 
 void FieldCell::Init(CellType cell, IPoint size, FPoint position) {
 	_cellType = cell;
+	if (cell == SLOT) {
+		_tex = Core::resourceManager.Get<Render::Texture>("Slot");
+	}
+	else {
+		_tex = nullptr;
+	}
 	_size = size;
 	_position = position;
 	_selected = false;
+	
 	//_coords = IPoint(position.x/size.x, position.y / size.y);
 };
 
@@ -89,7 +96,18 @@ void FieldCell::Draw() {
 	FRect cTexRect;
 	FRect tmp = FRect(0, 1, 0, 1);
 	Color c;
-	switch (_cellType)
+
+
+	if (_tex) {
+
+		IRect r=IRect(_position.x * _size.x, _position.y * _size.y, 64, 64);
+		
+		Render::device.SetTexturing(true);
+		_tex->Draw(r, tmp);
+		Render::device.SetTexturing(false);
+	}
+	else {
+		switch (_cellType)
 		{
 		case PASS:
 			c = Color(200, 0, 0, 255);
@@ -140,22 +158,25 @@ void FieldCell::Draw() {
 			c = Color(200, 200, 200, 255);
 			break;
 		case LAIR:
-			c = Color(100, 100,200, 255);
+			c = Color(100, 100, 200, 255);
 			break;
 		default:
 			cTexRect = FRect((7.0 / 8.0), (8.0 / 8.0), 0.0, (1.0 / 3.0));
 			break;
 		}
 		//_cells[row][col]->Draw(_ground, tmp);
-	if (_selected) {
-		c = c = Color(100, 100, 255, 255);
+		if (_selected) {
+			c = c = Color(100, 100, 255, 255);
+		}
+		IRect cRect = IRect(_position.x * _size.x + 1, _position.y * _size.y + 1, _size.x - 1, _size.y - 1);
+		//Render::device.SetTexturing(false);
+		Render::BeginColor(c);
+		Render::DrawRect(cRect);
+		Render::EndColor();
+		//Render::device.SetTexturing(true);
+
 	}
-	IRect cRect = IRect(_position.x * _size.x + 1, _position.y * _size.y + 1, _size.x - 1, _size.y - 1);
-	//Render::device.SetTexturing(false);
-	Render::BeginColor(c);
-	Render::DrawRect(cRect);
-	Render::EndColor();
-	//Render::device.SetTexturing(true);
+	
 
 };
 
@@ -197,6 +218,12 @@ void FieldCell::SetTexture(std::string tex) {
 
 void FieldCell::SetType(CellType cell) {
 	_cellType = cell;
+	if (cell == SLOT) {
+		_tex = Core::resourceManager.Get<Render::Texture>("Slot");
+	}
+	else {
+		_tex = nullptr;
+	}
 };
 
 void FieldCell::Select() {
@@ -444,11 +471,23 @@ CellType FieldMap::SelectCell(FPoint pos) {
 };
 
 
+void FieldMap::Reset() {
+	for (int i = 0; i < _cells.size(); i++) {
+		for (int j = 0; j < _cells[i].size(); j++) {
+			_cells[i][j]->DestroyTower();
+		}
+	}
+};
+
 std::vector<std::vector<boost::intrusive_ptr<FieldCell>>> FieldMap::Cells() {
 	return _cells;
 };
 
 void FieldMap::LoadFromFile(std::string file) {
+	for (int i = 0; i < _cells.size(); i++) {
+		_cells[i].clear();
+	}
+	_cells.clear();
 	_cellSize = IPoint(64, 64);
 	std::ifstream settingsFile(file);
 	std::string line;
@@ -519,6 +558,170 @@ void FieldMap::LoadFromFile(std::string file) {
 
 	
 };
+
+void FieldMap::LoadFromXml(std::string filename) {
+	
+	for (int i = 0; i < _cells.size(); i++) {
+		_cells[i].clear();
+	}
+	_cells.clear();
+	
+	try {
+		file<> file(filename.c_str());
+		// Может бросить исключение, если нет файла.
+
+		xml_document<> doc;
+		doc.parse<0>(file.data());
+		// Может бросить исключение, если xml испорчен.
+		//xml_node<>*
+		//xml_attribute<>*
+		//boost::intrusive_ptr<xml_attribute<>>
+		//boost::intrusive_ptr<xml_attribute<>>
+
+		xml_node<>* game = doc.first_node();
+		if (!game) { Assert(false); throw runtime_error("No root node"); }
+
+		xml_node<>* map = game->first_node("Map");
+		
+		for (xml_attribute<>* attr = map->first_attribute(); attr; attr = attr->next_attribute()){
+			if (utils::lexical_cast(attr->name()) == "rowCount") {
+				_size.x = utils::lexical_cast<int>(attr->value());
+				_cells.resize(_size.x);
+				
+			}
+			if (utils::lexical_cast(attr->name()) == "colCount") {
+				_size.y = utils::lexical_cast<int>(attr->value());
+				for (int i = 0; i < _cells.size(); i++) {
+					_cells[i].resize(_size.y);
+				}
+				
+			}
+			if (utils::lexical_cast(attr->name()) == "cellWidth") {
+				_cellSize.x = utils::lexical_cast<int>(attr->value());
+			}
+			if (utils::lexical_cast(attr->name()) == "cellHeight") {
+				_cellSize.y = utils::lexical_cast<int>(attr->value());
+			}
+		}
+
+		for (xml_node<>* row = map->first_node("Row"); row; row = row->next_sibling("Row")) {
+			int i = utils::lexical_cast<int>(row->first_attribute("index")->value());
+			for (xml_node<>* col = row->first_node("Col"); col; col = col->next_sibling("Col")) {
+				int j = utils::lexical_cast<int>(col->first_attribute("index")->value());
+				string cType = utils::lexical_cast(col->first_attribute("type")->value());
+				
+				if (i < _size.x && j < _size.y) {
+					if (cType == "PASS") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(PASS, _cellSize, FPoint(i, j));
+
+					}
+					else if (cType == "SLOT") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(SLOT, _cellSize, FPoint(i, j));
+
+					}
+					else if (cType == "GRASS") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(GRASS, _cellSize, FPoint(i, j));
+
+					}
+					else if (cType == "BORDER_0") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(BORDER_0, _cellSize, FPoint(i, j));
+
+					}
+					else if (cType == "BORDER_90") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(BORDER_90, _cellSize, FPoint(i, j));
+
+					}
+					else if (cType == "BORDER_180") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(BORDER_180, _cellSize, FPoint(i, j));
+
+					}
+					else if (cType == "BORDER_270") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(BORDER_270, _cellSize, FPoint(i, j));
+
+					}
+					else if (cType == "CORNER_IN_0") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(CORNER_IN_0, _cellSize, FPoint(i, j));
+
+					}
+					else if (cType == "CORNER_IN_90") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(CORNER_IN_90, _cellSize, FPoint(i, j));
+
+					}
+					else if (cType == "CORNER_IN_180") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(CORNER_IN_180, _cellSize, FPoint(i, j));
+
+					}
+					else if (cType == "CORNER_IN_270") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(CORNER_IN_270, _cellSize, FPoint(i, j));
+
+					}
+					else if (cType == "CORNER_OUT_0") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(CORNER_OUT_0, _cellSize, FPoint(i, j));
+
+					}
+					else if (cType == "CORNER_OUT_90") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(CORNER_OUT_90, _cellSize, FPoint(i, j));
+
+					}
+					else if (cType == "CORNER_OUT_180") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(CORNER_OUT_180, _cellSize, FPoint(i, j));
+
+					}
+					else if (cType == "CORNER_OUT_270") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(CORNER_OUT_270, _cellSize, FPoint(i, j));
+
+					}
+					else if (cType == "SPAWN") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(SPAWN, _cellSize, FPoint(i, j));
+
+					}
+					else if (cType == "LAIR") {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(LAIR, _cellSize, FPoint(i, j));
+
+					}
+					else {
+						_cells[i][j] = new FieldCell();
+						_cells[i][j]->Init(NONE, _cellSize, FPoint(i, j));
+
+					}
+				}
+					
+			}
+		}
+
+
+	}
+	catch (std::exception const& e) {
+		Log::log.WriteError(e.what());
+		Assert(false);
+	}
+
+
+
+};
+
+
+
+
+
+
 
 void FieldMap::SaveToFile(std::string file) {
 	_cellSize = IPoint(32, 32);

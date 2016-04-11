@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 using namespace std;
+using namespace rapidxml;
 
 Attack::Attack(){
 	_index = 0;
@@ -12,6 +13,9 @@ Attack::Attack(){
 	_monsterCount = 0;
 	_maxHp = 0;
 	_modSpeed = 0;
+	_finished = false;
+	_waveGold = 0;
+	_monsterGold = 0;
 };
 Attack::Attack(int index, const std::string mType, const std::string aName, const int mCount, int hp, int speed) {
 	_index = index;
@@ -20,6 +24,9 @@ Attack::Attack(int index, const std::string mType, const std::string aName, cons
 	_monsterCount = mCount;
 	_maxHp = hp;
 	_modSpeed = speed;
+	_finished = false;
+	_waveGold = 0;
+	_monsterGold = 0;
 };
 
 Attack::~Attack() {};
@@ -48,6 +55,18 @@ int	Attack::Speed() {
 	return _modSpeed;
 };
 
+int Attack::WGold() {
+	return _waveGold;
+};
+
+int Attack::MGold() {
+	return _monsterGold;
+};
+
+bool Attack::Finished() {
+	return _finished;
+};
+
 void Attack::SetType(std::string s) {
 	_monsterType = s;
 };
@@ -69,6 +88,17 @@ void Attack::SetSpeed(int speed) {
 	_modSpeed = speed;
 };
 
+void Attack::SetWGold(int g) {
+	_waveGold = g;
+};
+
+void Attack::SetMGold(int g) {
+	_monsterGold = g;
+};
+
+void Attack::SetFinished(bool finish) {
+	_finished = finish;
+};
 
 MonsterAttack::MonsterAttack() {
 	_attacks.clear();
@@ -82,6 +112,7 @@ void MonsterAttack::SetDelay(float d) {
 };
 
 void MonsterAttack::LoadFromFile(std::string file) {
+	_attacks.clear();
 	std::ifstream settingsFile(file);
 	std::string line;
 	std::vector<std::string> lines;
@@ -148,10 +179,69 @@ void MonsterAttack::LoadFromFile(std::string file) {
 			if (name == "speed") {
 				_attacks[index].SetSpeed(utils::lexical_cast<int>(value));
 			}
+			if (name == "wgold") {
+				_attacks[index].SetWGold(utils::lexical_cast<int>(value));
+			}
+			if (name == "mgold") {
+				_attacks[index].SetMGold(utils::lexical_cast<int>(value));
+			}
 
 		}
 	}
 };
+
+void MonsterAttack::LoadFromXml(std::string filename) {
+	_attacks.clear();
+	_attackDelay = 0;
+	try {
+		file<> file(filename.c_str());
+		// Может бросить исключение, если нет файла.
+
+		xml_document<> doc;
+		doc.parse<0>(file.data());
+		// Может бросить исключение, если xml испорчен.
+
+		xml_node<>* game = doc.first_node();
+		if (!game) { Assert(false); throw runtime_error("No root node"); }
+
+		xml_node<>* attacks = game->first_node("Attacks");
+		string delay = attacks->first_attribute("delay")->value();
+		_attackDelay = utils::lexical_cast<float>(delay);
+		for (xml_node<>* attack = attacks->first_node("Attack"); attack; attack = attack->next_sibling("Attack")) {
+			
+			Attack atk;
+			string name = attack->first_attribute("name")->value();
+			atk.SetName(name);
+			string mType = attack->first_attribute("type")->value();
+			atk.SetType(mType);
+			string count = attack->first_attribute("count")->value();
+			atk.SetCount(utils::lexical_cast<int>(count));
+			string hp = attack->first_attribute("hp")->value();
+			atk.SetMaxHp(utils::lexical_cast<int>(hp));
+			string speed = attack->first_attribute("speed")->value();
+			atk.SetSpeed(utils::lexical_cast<int>(speed));
+			string gpm = attack->first_attribute("goldPM")->value();
+			atk.SetMGold(utils::lexical_cast<int>(gpm));
+			string gpa = attack->first_attribute("goldAA")->value();
+			atk.SetWGold(utils::lexical_cast<int>(gpa));
+			_attacks.push_back(atk);
+		}
+
+
+	}
+	catch (std::exception const& e) {
+		Log::log.WriteError(e.what());
+		Assert(false);
+	}
+
+
+
+};
+
+
+
+
+
 
 void MonsterAttack::SaveToFile(std::string file) {
 	std::ofstream sFile(file);
@@ -178,6 +268,11 @@ void MonsterAttack::SaveToFile(std::string file) {
 	}
 	sFile.close();
 };
+
+float MonsterAttack::Delay() {
+	return _attackDelay;
+};
+
 
 std::vector<Attack> & MonsterAttack::GetAttack() {
 	return _attacks;

@@ -42,8 +42,8 @@ public:
 
 		}
 	}
-
-
+	void SetPrice(int);
+	int Price();
 protected:
 	int ref_cnt_;
 	std::string _towerType;
@@ -55,6 +55,7 @@ protected:
 	float  _reloadTimer;
 	int	   _range;
 	int    _missileSpeed;
+	int    _price;
 	std::vector<boost::intrusive_ptr<FireParent>> _missiles;
 	Render::TexturePtr _tex;
 
@@ -78,6 +79,7 @@ public:
 	void Draw();
 	void Update(float dt);
 	bool Shoot();
+	void LoadFromXml(std::string filename);
 };
 
 

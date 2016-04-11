@@ -135,11 +135,22 @@ NormalMissile::NormalMissile(FPoint position, MonsterParent * target, int mSpeed
 	
 	_missileType = "Normal";
 	_position = position;
-	_targetPosition = target->HitPosition(fTime);
 	_speed = FPoint(0, 0);
 	_modSpeed = mSpeed;
-	_flyTime = fTime;
-	_missileTimer = mFlyTimer;
+	if (target && _modSpeed>0){
+		float d = _position.GetDistanceTo(target->Position());
+		_flyTime = d/_modSpeed;
+		_targetPosition = target->HitPosition(_flyTime);
+	}
+	else {
+		_flyTime = fTime;
+		_targetPosition = target->HitPosition(fTime);
+	}
+		
+	
+
+	
+	_missileTimer = 0;
 	_fly = true;
 	_hit = false;
 	_tex = tex;
@@ -289,11 +300,18 @@ DecayMissile::DecayMissile() {
 DecayMissile::DecayMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, FPoint decayFactor, IPoint dmg, Render::TexturePtr tex) {
 	_missileType = "Decay";
 	_position = position;
-	_targetPosition = target->HitPosition(fTime);
 	_speed = FPoint(0, 0);
 	_modSpeed = mSpeed;
-	_flyTime = fTime;
-	_missileTimer = mFlyTimer;
+	if (target && _modSpeed>0) {
+		float d = _position.GetDistanceTo(target->Position());
+		_flyTime = d / _modSpeed;
+		_targetPosition = target->HitPosition(_flyTime);
+	}
+	else {
+		_flyTime = fTime;
+		_targetPosition = target->HitPosition(fTime);
+	}
+	_missileTimer = 0;
 	_fly = true;
 	_hit = false;
 	_tex = tex;
@@ -359,11 +377,18 @@ BashMissile::BashMissile() {
 BashMissile::BashMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, FPoint bash, IPoint dmg, Render::TexturePtr tex) {
 	_missileType = "Bash";
 	_position = position;
-	_targetPosition = target->HitPosition(fTime);
 	_speed = FPoint(0, 0);
 	_modSpeed = mSpeed;
-	_flyTime = fTime;
-	_missileTimer = mFlyTimer;
+	if (target && _modSpeed>0) {
+		float d = _position.GetDistanceTo(target->Position());
+		_flyTime = d / _modSpeed;
+		_targetPosition = target->HitPosition(_flyTime);
+	}
+	else {
+		_flyTime = fTime;
+		_targetPosition = target->HitPosition(fTime);
+	}
+	_missileTimer = 0;
 	_fly = true;
 	_hit = false;
 	_tex = tex;

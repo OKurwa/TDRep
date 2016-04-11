@@ -24,6 +24,7 @@ enum CellType
 
 class FieldCell {
 public:
+	typedef boost::intrusive_ptr<FieldCell> Ptr;
 	FieldCell();
 	~FieldCell();
 	
@@ -37,7 +38,7 @@ public:
 	IPoint Size();
 	FPoint Position();
 	bool Selected();
-	bool Empty();
+	
 
 	
 
@@ -70,6 +71,7 @@ private:
 	IPoint _size;
 	FPoint _position;
 	//IPoint _coords;
+	Render::TexturePtr _tex;
 
 };
 
@@ -89,6 +91,7 @@ public:
 	void Init();
 	void TryInit();
 	void LoadFromFile(std::string);
+	void LoadFromXml(std::string);
 	void SaveToFile(std::string);
 	void Draw();
 	void Update(float dt);
@@ -110,12 +113,13 @@ public:
 	CellType PosCellType(IPoint);
 	IPoint PosCell(FPoint pos);
 	CellType SelectCell(FPoint pos);
-	std::vector<std::vector<boost::intrusive_ptr<FieldCell>>> Cells();
+	void Reset();
+	std::vector<std::vector<FieldCell::Ptr>> Cells();
 private:
 	//int ref_cnt_;
 	IPoint _size;
 	IPoint _cellSize;
-	std::vector<std::vector<boost::intrusive_ptr<FieldCell>>> _cells;
+	std::vector<std::vector<FieldCell::Ptr>> _cells;
 	Render::Texture* _ground;
 };
 

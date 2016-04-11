@@ -22,35 +22,22 @@ TestWidget::TestWidget(const std::string& name, rapidxml::xml_node<>* elem)
 
 void TestWidget::Init()
 {
-	
-	_monsterAttack.LoadFromFile("loadMob.txt");
 	_fieldMap.LoadFromFile("loadMap.txt");
-	
+	_fieldMap.LoadFromXml("NewMap.xml");
+
 	IPoint curCell;
 	for (int i = 0; i < _fieldMap.Size().x; i++) {
 		for (int j = 0; j < _fieldMap.Size().y; j++) {
 			curCell = IPoint(i* _fieldMap.CellSize().x + 32, j* _fieldMap.CellSize().y + 32);
 			CellType cell = _fieldMap.PosCellType(curCell);
 			if (cell == SPAWN)
-				_spawn = IPoint(i,j);
+				_spawn = IPoint(i, j);
 		}
 	}
+	_texButtons = Core::resourceManager.Get<Render::Texture>("Towers");
 	//TowerParent * t = new TowerParent(FPoint(32, 32), 0, 0, 0, 0, 0, nullptr);
 	//_towers.push_back(t);
-	_spawnTimer = 0;
-	_spawnTime = 0.4;
-	_curMonsterAttack = 0;
-	_curTowerType = Normal;
 	
-	
-	//for (int i = 0; i < _monsterAttack.GetAttack()[0].Count(); i++) {
-	//	_monsters[i]->FindAWay();
-	//}
-	
-	//_fieldMap.TryInit();
-	//_fieldMap.SaveToFile("save.txt");
-
-
 
 
 }
@@ -60,6 +47,23 @@ void TestWidget::Draw()
 	IPoint fieldSize = _fieldMap.Size();
 	IPoint cellSize = _fieldMap.CellSize();
 
+	IRect bRect = IRect(960, 256, 64, 64);
+	FRect uvRect = FRect(0, 0.2, 0, 1.0);
+	_texButtons->Draw(bRect, uvRect);
+	bRect = IRect(960, 192, 64, 64);
+	uvRect = FRect(0.2, 0.4, 0, 1.0);
+	_texButtons->Draw(bRect, uvRect);
+	bRect = IRect(960, 128, 64, 64);
+	uvRect = FRect(0.4, 0.6, 0, 1.0);
+	_texButtons->Draw(bRect, uvRect);
+	bRect = IRect(960, 64, 64, 64);
+	uvRect = FRect(0.6, 0.8, 0, 1.0);
+	_texButtons->Draw(bRect, uvRect);
+	bRect = IRect(960, 0, 64, 64);
+	uvRect = FRect(0.8, 1.0, 0, 1.0);
+	_texButtons->Draw(bRect, uvRect);
+	
+	
 	//Render::device.PushMatrix();
 	
 	//Render::device.MatrixTranslate(512, 384, 0);
@@ -77,13 +81,15 @@ void TestWidget::Draw()
 	Render::device.SetTexturing(true);
 	//Render::device.PopMatrix();
 	
-
+	World::Instance().Draw();
 
 
 }
 
 void TestWidget::Update(float dt)
 {	
+
+	//dt *= 0.5;
 	_fieldMap.Update(dt);
 	for (unsigned int i = 0; i < _monsters.size(); i++) {
 		_monsters[i]->Update(dt);
@@ -101,65 +107,89 @@ void TestWidget::Update(float dt)
 	//Задержка спавна монстра
 	_spawnTimer += dt;
 
-	//Cпавн
-	if (_curMonsterAttack < _monsterAttack.GetAttack().size()) {
-		if (_monsterAttack.GetAttack()[_curMonsterAttack].Count()>_monsters.size() && _spawnTimer>_spawnTime) {
-			int hp = _monsterAttack.GetAttack()[_curMonsterAttack].MaxHp();
-			int spd = _monsterAttack.GetAttack()[_curMonsterAttack].Speed();
-			MonsterParent::Ptr m;
-			if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Normal") {
-				//Обычный монстр
-				m = new NormalMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr);
-			}
-			else if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Boss") {
-				//Босс
-				m = new BossMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, 0.5, nullptr);
-			}
-			else if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Healing") {
+	if (World::Instance().State() == WAVE) {
+		//Cпавн
+		if (_curMonsterAttack < _monsterAttack.GetAttack().size()) {
+			
+			if (_monsterAttack.GetAttack()[_curMonsterAttack].Count()>_curMonsterCount && _spawnTimer>_spawnTime) {
+				int hp = _monsterAttack.GetAttack()[_curMonsterAttack].MaxHp();
+				int spd = _monsterAttack.GetAttack()[_curMonsterAttack].Speed();
+				MonsterParent::Ptr m;
+				if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Normal") {
+					//Обычный монстр
+					m = new NormalMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr);
+				}
+				else if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Boss") {
+					//Босс
+					m = new BossMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, 0.5, nullptr);
+				}
+				else if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Healing") {
+					//Регенерирующий монстр
+					m = new HealingMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr, 5);
+				}
+				else if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Immune") {
+					//Иммунный монстр
+					m = new ImmuneMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr);
+				}
+				else {
+					//Обычный монстр
+					m = new NormalMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr);
+				}
+
+
 				//Регенерирующий монстр
-				m = new HealingMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr, 5);
-			}
-			else if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Immune") {
+				//boost::intrusive_ptr<MonsterParent> m = new HealingMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), 64, 200, &_fieldMap, nullptr, 5);
+
 				//Иммунный монстр
-				m = new ImmuneMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr);
+				//boost::intrusive_ptr<MonsterParent> m = new ImmuneMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), 64, 200, &_fieldMap, nullptr);
+
+				//Босс
+				//boost::intrusive_ptr<MonsterParent> m = new BossMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), 64, 600, &_fieldMap, 0.5, nullptr);
+
+				++_curMonsterCount;
+				_monsters.push_back(m);
+
+			}
+		}
+
+		for (std::vector<MonsterParent::Ptr>::iterator it = _monsters.begin(); it != _monsters.end();) {
+			if ((*it)->Dead()) {
+				World::Instance().GoldAdd(_monsterAttack.GetAttack()[_curMonsterAttack].MGold());
+				it = _monsters.erase(it);
+			}else if((*it)->Finish()) {
+				//World::Instance().GoldAdd(_monsterAttack.GetAttack()[_curMonsterAttack].MGold());
+				World::Instance().LoseLife();
+				it = _monsters.erase(it);
 			}
 			else {
-				//Обычный монстр
-				m = new NormalMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr);
+				it++;
 			}
-			
-
-			//Регенерирующий монстр
-			//boost::intrusive_ptr<MonsterParent> m = new HealingMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), 64, 200, &_fieldMap, nullptr, 5);
-
-			//Иммунный монстр
-			//boost::intrusive_ptr<MonsterParent> m = new ImmuneMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), 64, 200, &_fieldMap, nullptr);
-			
-			//Босс
-			//boost::intrusive_ptr<MonsterParent> m = new BossMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), 64, 600, &_fieldMap, 0.5, nullptr);
-
-			
-			_monsters.push_back(m);
 
 		}
+		//Проверка окончания волны
+		float endWave = true;
+		for (unsigned int i = 0; i < _monsters.size(); i++) {
+			if (!_monsters[i]->Finish() && !_monsters[i]->Dead())
+				endWave = false;
+		}
+		//Очистка старой и начало новой
+		if (endWave && _curMonsterCount>0) {
+			_monsters.clear();
+			_curMonsterCount = 0;
+			if(_curMonsterAttack+1<_monsterAttack.GetAttack().size())
+ 				++_curMonsterAttack;
+			World::Instance().SetNewAttack(_monsterAttack.Delay(), _monsterAttack.GetAttack()[_curMonsterAttack]);
+			//World::Instance().SetAttackIndex(_curMonsterAttack);
+		}
+		
 	}
-	//Проверка окончания волны
-	float endWave = true;
-	for (unsigned int i = 0; i < _monsters.size(); i++) {
-		if (!_monsters[i]->Finish() && !_monsters[i]->Dead())
-			endWave = false;
-	}
-	//Очистка старой и начало новой
-	if (endWave && _monsters.size() > 0) {
-		_monsters.clear();
-		++_curMonsterAttack;
-	}
+
 	//Сброс задержки спавна монстра
 	if (_spawnTimer > _spawnTime)
 		_spawnTimer = 0;
 	
 	
-
+	World::Instance().Update(dt);
 	
 }
 
@@ -198,26 +228,37 @@ bool TestWidget::MouseDown(const IPoint &mouse_pos)
 			{
 			case Normal:
 				t = new NormalTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, 0, IPoint(100, 100), nullptr);
+				t->SetPrice(50);
 				break;
 			case Splash:
 				t = new SplashTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, _monsters, 0.5, 0, 192, 60, 0, IPoint(5, 10), nullptr);
+				t->SetPrice(50);
 				break;
 			case Slow:
 				t = new SlowTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, _monsters, 0.5, 0, 192, 50, FPoint(0.7, 1), 0, IPoint(10, 30), nullptr);
+				t->SetPrice(50);
 				break;
 			case Decay:
 				t = new DecayTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, FPoint(15, 10), 0, IPoint(0, 0), nullptr);
+				t->SetPrice(50);
 				break;
 			case Bash:
 				t = new BashTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, FPoint(0.5, 1), 0, IPoint(5, 10), nullptr);
+				t->SetPrice(50);
 				break;
 			default:
 				t = new NormalTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, 0, IPoint(100, 100), nullptr);
+				t->SetPrice(50);
 				break;
 			}
 
-
-     		_towers.push_back(t);
+			if (World::Instance().GoldSpend(t->Price())) {
+				_towers.push_back(t);
+			}
+			else{
+				bool b=_fieldMap.DestroyTower(pos1);
+			}
+     			
 		};
 		
 	}
@@ -242,6 +283,9 @@ bool TestWidget::MouseDown(const IPoint &mouse_pos)
 		};
 
 	}
+
+
+	
 	return false;
 }
 
@@ -301,5 +345,68 @@ void TestWidget::AcceptMessage(const Message& message)
 		{
 			_curTowerType = Bash;
 		}
+		if (code == 's') {
+			_fieldMap.Reset();
+			_towers.clear();
+			_monsters.clear();
+			//_monsterAttack.LoadFromFile("loadMob.txt");
+			_monsterAttack.LoadFromXml("NewMap.xml");
+			_spawnTimer = 0;
+			_spawnTime = 0.4;
+			_curMonsterAttack = 0;
+			_curTowerType = Normal;
+			_curMonsterCount = 0;
+
+			//for (int i = 0; i < _monsterAttack.GetAttack()[0].Count(); i++) {
+			//	_monsters[i]->FindAWay();
+			//}
+
+			//_fieldMap.TryInit();
+			//_fieldMap.SaveToFile("save.txt");
+
+			World::Instance().Init(100, _monsterAttack.GetAttack().size(), _monsterAttack.GetAttack()[0].Count(), _monsterAttack.GetAttack()[0].Count(), 20, _monsterAttack);
+
+
+
+
+
+			World::Instance().SetNewAttack(_monsterAttack.Delay(), _monsterAttack.GetAttack()[0]);
+		}
+		
 	}
 }
+
+bool TestWidget::LoadMapFromXml(std::string filename) {
+
+	
+
+
+
+
+	try {
+		rapidxml::file<> file(filename.c_str());
+		// Может бросить исключение, если нет файла.
+
+		rapidxml::xml_document<> doc;
+		doc.parse<0>(file.data());
+		// Может бросить исключение, если xml испорчен.
+
+		rapidxml::xml_node<>* root = doc.first_node();
+		if (!root) { Assert(false); throw std::runtime_error("No root node"); }
+
+		rapidxml::xml_node<>* game = root->first_node("Game");
+		for (; game != NULL; game = game->next_sibling("Game")) {
+			rapidxml::xml_node<>* r = game->first_node();
+			for (; r != NULL; r = r->next_sibling()) {
+				if (utils::equals(r->name(), "Map")) {
+					
+				}
+			}
+		}
+	}
+	catch (std::exception const& e) {
+		Log::log.WriteError(e.what());
+		Assert(false);
+	}
+	return false;
+};

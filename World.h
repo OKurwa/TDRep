@@ -7,6 +7,14 @@ enum TowerType {
 	Decay,
 	Bash
 };
+enum WorldState {
+	START,
+	LOSE,
+	WIN,
+	DELAY,
+	WAVE,
+	PAUSE
+};
 
 class World
 {
@@ -23,18 +31,22 @@ public:
 				int nextAttackMonstersCount,
 				int monstersRemaining,
 				int lives,
-				MonsterAttack * attacks);
+				MonsterAttack & attacks);
 	std::string CurAttackName();
 	std::string NextAttackName();
 	std::string CurAttackType(); 
 	std::string NextAttackType();
 	int Gold();
+	WorldState State();
 
+	void SetState(WorldState);
 	void SetAttackIndex(int index);
-	void SetAttackDelay(float delay);
+	void SetNewAttack(float delay, Attack & atk);
+	void Draw();
 	void Update(float dt);
 	void GoldAdd(int gold);
 	bool GoldSpend(int gold);
+	void LoseLife();
 	
 private:
 	World();
@@ -54,6 +66,6 @@ private:
 	std::string _curAttackType;
 	std::string _nextAttackType;
 	float _delayTimer;
-
-
+	WorldState _state;
+	//MonsterAttack _attacks;
 };

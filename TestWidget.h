@@ -24,7 +24,7 @@ public:
 	bool MouseDown(const IPoint& mouse_pos);
 	void MouseMove(const IPoint& mouse_pos);
 	void MouseUp(const IPoint& mouse_pos);
-
+	bool LoadMapFromXml(std::string filename);
 	
 
 private:
@@ -38,6 +38,7 @@ private:
 	
 	Render::Texture* _tex1;
 	Render::Texture* _tex2;
+	Render::Texture* _texButtons;
 	int _curTex;
 
 	EffectsContainer _effCont;
@@ -50,10 +51,11 @@ private:
 	float _spawnTimer;
 	float _spawnTime;
 	int   _curMonsterAttack;
+	int   _curMonsterCount;
 
 
-	std::vector<boost::intrusive_ptr<TowerParent>> _towers;     // наши башни на поле
-	std::vector<boost::intrusive_ptr<MonsterParent>> _monsters;    // текущие монстры на поле
+	std::vector<TowerParent::Ptr> _towers;     // наши башни на поле
+	std::vector<MonsterParent::Ptr> _monsters;    // текущие монстры на поле
 	FieldMap _fieldMap;
 	MonsterAttack _monsterAttack;
 	TowerType _curTowerType;

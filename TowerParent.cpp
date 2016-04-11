@@ -3,6 +3,8 @@
 #include "FireParent.h"
 //#include "MonsterParent.h"
 #include "TowerParent.h"
+using namespace std;
+using namespace rapidxml;
 //----------------------------------------------//
 //----------------------------------------------//
 //			Базовый класс башни 				//
@@ -42,7 +44,12 @@ TowerParent::~TowerParent() {
 
 void TowerParent::Draw() {
 	if (_tex) {
-		_tex->Draw(_position);
+		IRect r = IRect(_position.x - 64, _position.y - 40, 128, 128);
+		FRect tmp = FRect(0, 1 / 32.0, 0.125, 0.250);
+		Render::device.SetTexturing(true);
+		//_tex->TranslateUV(r, tmp);
+		_tex->Draw(r, tmp);
+		Render::device.SetTexturing(false);
 	}
 	else {
 		IRect cRect = IRect(_position.x - 5, _position.y - 5, 11, 11);
@@ -150,6 +157,13 @@ bool TowerParent::TakeAim(std::vector<MonsterParent::Ptr> & monsters) {
 	
 };
 
+void TowerParent::SetPrice(int p) {
+	_price = p;
+};
+
+int	 TowerParent::Price() {
+	return _price;
+};
 
 //----------------------------------------------//
 //----------------------------------------------//
@@ -181,7 +195,7 @@ NormalTower::NormalTower(FPoint position, IPoint cell, float rTime, float rTimer
 	_range = range;
 	_missileSpeed = mSpeed;
 	_missiles.clear();
-	_tex = tex;
+	_tex = Core::resourceManager.Get<Render::Texture>("Ant");
 	_damage = dmg;
 	
 };
@@ -192,7 +206,13 @@ NormalTower::~NormalTower() {
 
 void NormalTower::Draw() {
 	if (_tex) {
-		_tex->Draw(_position);
+		IRect r = IRect(_position.x -64 , _position.y -40, 128, 128);
+		FRect tmp = FRect(0,1/32.0, 0.125, 0.250);
+		Render::device.SetTexturing(true);
+		//_tex->TranslateUV(r, tmp);
+		_tex->Draw(r, tmp);
+		Render::device.SetTexturing(false);
+		
 	}
 	else {
 		IRect cRect = IRect(_position.x - 5, _position.y - 5, 11, 11);
@@ -237,7 +257,7 @@ void NormalTower::Update(float dt) {
 };
 bool NormalTower::Shoot() {
 	if (_reloadTimer == 0 && _target) {
-		FireParent::Ptr mis = new NormalMissile(_position, _target, 0, 0.2, 0, _damage, nullptr);
+		FireParent::Ptr mis = new NormalMissile(_position, _target, 300, 0.2, 0, _damage, nullptr);
 		_missiles.push_back(mis);
 		_reloadTimer = _reloadTime;
 		return true;
@@ -245,6 +265,76 @@ bool NormalTower::Shoot() {
 	else {
 		return false;
 	}
+};
+
+void NormalTower::LoadFromXml(std::string filename) {
+
+	_towerType = "Normal";
+	_position = IPoint(0,0);
+	_cell = IPoint(0, 0);
+	_target = nullptr;
+	_missiles.clear();
+	
+	try {
+		file<> file(filename.c_str());
+		// Может бросить исключение, если нет файла.
+
+		xml_document<> doc;
+		doc.parse<0>(file.data());
+		// Может бросить исключение, если xml испорчен.
+
+		xml_node<>* game = doc.first_node();
+		if (!game) { Assert(false); throw runtime_error("No root node"); }
+
+		xml_node<>* towers = game->first_node("Towers");
+		for (xml_node<>* tower = towers->first_node("Tower"); tower; tower = tower->next_sibling("Tower")) {
+			string id = tower->first_attribute("id")->value();
+			if (id == "NormalTower") {
+				
+				string value = tower->first_attribute("texture")->value();
+				_tex = Core::resourceManager.Get<Render::Texture>(value);
+				xml_node<>* missile = towers->first_node("Missile");
+				value = missile->first_attribute("reload")->value();
+				_reloadTime = utils::lexical_cast<float>(value);
+				_reloadTimer = 0;
+				value = missile->first_attribute("misSpeed")->value();
+				_missileSpeed = utils::lexical_cast<int>(value);
+				value = missile->first_attribute("minDMG")->value();
+				_damage.x = utils::lexical_cast<int>(value);
+				value = missile->first_attribute("maxDMG")->value();
+				_damage.y = utils::lexical_cast<int>(value);
+				value = missile->first_attribute("range")->value();
+				_range = utils::lexical_cast<int>(value);
+				
+				
+				
+				/*
+				string texture = tower->first_attribute("texture")->value();
+				_tex = Core::resourceManager.Get<Render::Texture>(texture);
+				xml_node<>* missile = towers->first_node("Missile");
+				string reload = missile->first_attribute("reload")->value();
+				_reloadTime = utils::lexical_cast<float>(reload);
+				_reloadTimer = 0;
+				string misSpeed = missile->first_attribute("misSpeed")->value();
+				_missileSpeed = utils::lexical_cast<int>(misSpeed);
+				string minDMG = missile->first_attribute("minDMG")->value();
+				string maxDMG = missile->first_attribute("maxDMG")->value();
+				_damage = IPoint(utils::lexical_cast<int>(minDMG),utils::lexical_cast<int>(maxDMG));
+				string range = missile->first_attribute("range")->value();
+				_range = utils::lexical_cast<int>(range);
+				*/
+			}
+		}
+
+
+	}
+	catch (std::exception const& e) {
+		Log::log.WriteError(e.what());
+		Assert(false);
+	}
+
+
+
 };
 
 //----------------------------------------------//
@@ -279,7 +369,7 @@ SlowTower::SlowTower(FPoint position, IPoint cell, std::vector<MonsterParent::Pt
 	_range = range;
 	_missileSpeed = mSpeed;
 	_missiles.clear();
-	_tex = tex;
+	_tex = Core::resourceManager.Get<Render::Texture>("IceAnt");
 	_splashRange = sRange;
 	_slow = sFactor;
 	_damage = dmg;
@@ -290,7 +380,12 @@ SlowTower::~SlowTower() {};
 
 void SlowTower::Draw() {
 	if (_tex) {
-		_tex->Draw(_position);
+		IRect r = IRect(_position.x - 64, _position.y - 40, 128, 128);
+		FRect tmp = FRect(0, 1 / 32.0, 0.125, 0.250);
+		Render::device.SetTexturing(true);
+		//_tex->TranslateUV(r, tmp);
+		_tex->Draw(r, tmp);
+		Render::device.SetTexturing(false);
 	}
 	else {
 		IRect cRect = IRect(_position.x - 5, _position.y - 5, 11, 11);
@@ -413,7 +508,7 @@ DecayTower::DecayTower(FPoint position, IPoint cell, float rTime, float rTimer, 
 	_range = range;
 	_missileSpeed = mSpeed;
 	_missiles.clear();
-	_tex = tex;
+	_tex = Core::resourceManager.Get<Render::Texture>("PoisonAnt");
 	_decay = dFactor;
 	_damage = dmg;
 
@@ -423,7 +518,12 @@ DecayTower::~DecayTower() {};
 
 void DecayTower::Draw() {
 	if (_tex) {
-		_tex->Draw(_position);
+		IRect r = IRect(_position.x - 64, _position.y - 40, 128, 128);
+		FRect tmp = FRect(0, 1 / 32.0, 0.125, 0.250);
+		Render::device.SetTexturing(true);
+		//_tex->TranslateUV(r, tmp);
+		_tex->Draw(r, tmp);
+		Render::device.SetTexturing(false);
 	}
 	else {
 		IRect cRect = IRect(_position.x - 5, _position.y - 5, 11, 11);
@@ -505,7 +605,7 @@ BashTower::BashTower(FPoint position, IPoint cell, float rTime, float rTimer, in
 	_range = range;
 	_missileSpeed = mSpeed;
 	_missiles.clear();
-	_tex = tex;
+	_tex = Core::resourceManager.Get<Render::Texture>("StunAnt");
 	_bash = bash;
 	_damage = dmg;
 };
@@ -514,7 +614,12 @@ BashTower::~BashTower() {};
 
 void BashTower::Draw() {
 	if (_tex) {
-		_tex->Draw(_position);
+		IRect r = IRect(_position.x - 64, _position.y - 40, 128, 128);
+		FRect tmp = FRect(0, 1 / 32.0, 0.125, 0.250);
+		Render::device.SetTexturing(true);
+		//_tex->TranslateUV(r, tmp);
+		_tex->Draw(r, tmp);
+		Render::device.SetTexturing(false);
 	}
 	else {
 		IRect cRect = IRect(_position.x - 5, _position.y - 5, 11, 11);
@@ -603,7 +708,7 @@ SplashTower::SplashTower(FPoint position, IPoint cell, std::vector<MonsterParent
 	_range = range;
 	_missileSpeed = mSpeed;
 	_missiles.clear();
-	_tex = tex;
+	_tex = Core::resourceManager.Get<Render::Texture>("FireAnt");
 	_splashRange = sRange;
 	_targets = targets;
 	_damage = dmg;
@@ -613,7 +718,12 @@ SplashTower::~SplashTower() {};
 
 void SplashTower::Draw() {
 	if (_tex) {
-		_tex->Draw(_position);
+		IRect r = IRect(_position.x - 64, _position.y - 40, 128, 128);
+		FRect tmp = FRect(0, 1 / 32.0, 0.125, 0.250);
+		Render::device.SetTexturing(true);
+		//_tex->TranslateUV(r, tmp);
+		_tex->Draw(r, tmp);
+		Render::device.SetTexturing(false);
 	}
 	else {
 		IRect cRect = IRect(_position.x - 5, _position.y - 5, 11, 11);
