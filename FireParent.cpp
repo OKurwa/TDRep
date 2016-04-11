@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "FireParent.h"
-
+using namespace std;
+using namespace rapidxml;
 
 //----------------------------------------------//
 //----------------------------------------------//
@@ -72,6 +73,12 @@ FPoint FireParent::Position() {
 FPoint FireParent::TargetPosition() {
 	return _targetPosition;
 };
+
+
+void FireParent::SetPosition(FPoint pos) {
+	_position = pos;
+};
+
 std::string FireParent::Type() {
 	return _missileType;
 
@@ -109,6 +116,7 @@ void FireParent::MakePath() {
 };
 
 
+
 //----------------------------------------------//
 //----------------------------------------------//
 //				Обычный снаряд					//
@@ -131,34 +139,28 @@ NormalMissile::NormalMissile() {
 	_damage = IPoint(0, 0);
 };
 
-NormalMissile::NormalMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, IPoint dmg, Render::TexturePtr tex) {
-	
-	_missileType = "Normal";
-	_position = position;
-	_speed = FPoint(0, 0);
-	_modSpeed = mSpeed;
-	if (target && _modSpeed>0){
-		float d = _position.GetDistanceTo(target->Position());
-		_flyTime = d/_modSpeed;
-		_targetPosition = target->HitPosition(_flyTime);
-	}
-	else {
-		_flyTime = fTime;
-		_targetPosition = target->HitPosition(fTime);
-	}
-		
-	
 
-	
+
+NormalMissile::NormalMissile(NMissInfo inf) {
+	_missileType = "Normal";
+	_position = inf._position;
+	_speed = FPoint(0, 0);
+	_modSpeed = inf._modSpeed;
+	if (inf._target && _modSpeed>0) {
+		float d = _position.GetDistanceTo(inf._target->Position());
+		_flyTime = d / _modSpeed;
+		_targetPosition = inf._target->HitPosition(_flyTime);
+	}
 	_missileTimer = 0;
 	_fly = true;
 	_hit = false;
-	_tex = tex;
-	_damage = dmg;
-	_target = target;
+	_tex = nullptr;
+	_damage = inf._damage;
+	_target = inf._target;
+	_missilePathX.Clear();
+	_missilePathY.Clear();
 	MakePath();
 };
-
 
 NormalMissile::~NormalMissile() {
 
@@ -191,6 +193,66 @@ void NormalMissile::Update(float dt) {
 	}
 };
 
+void NormalMissile::LoadFromXml(std::string filename, int index) {
+	_missileType = "Normal";
+	_position = FPoint(0, 0);
+	_targetPosition = FPoint(0, 0);
+	_target = nullptr;
+	
+
+	try {
+		file<> file(filename.c_str());
+		// Может бросить исключение, если нет файла.
+
+		xml_document<> doc;
+		doc.parse<0>(file.data());
+		// Может бросить исключение, если xml испорчен.
+
+		xml_node<>* game = doc.first_node();
+		if (!game) { Assert(false); throw runtime_error("No root node"); }
+
+		xml_node<>* towers = game->first_node("Towers");
+		for (xml_node<>* tower = towers->first_node("Tower"); tower; tower = tower->next_sibling("Tower")) {
+			string id = tower->first_attribute("id")->value();
+			if (id == "NormalTower") {
+				for (xml_node<>* missile = tower->first_node("Missile"); missile; missile = missile->next_sibling("Missile")) {
+					string id = missile->first_attribute("id")->value();
+					if (utils::lexical_cast<int>(id) == index) {
+						string value = missile->first_attribute("misSpeed")->value();
+						_modSpeed = utils::lexical_cast<int>(value);
+						value = missile->first_attribute("minDMG")->value();
+						_damage.x = utils::lexical_cast<int>(value);
+						value = missile->first_attribute("maxDMG")->value();
+						_damage.y = utils::lexical_cast<int>(value);
+						
+					}
+				}
+				
+				
+				
+			}
+		}
+
+
+	}
+	catch (std::exception const& e) {
+		Log::log.WriteError(e.what());
+		Assert(false);
+	}
+};
+
+void NormalMissile::SetTarget(MonsterParent * target) {
+	_target = target;
+	if (target && _modSpeed>0) {
+		float d = _position.GetDistanceTo(target->Position());
+		_flyTime = d / _modSpeed;
+		_targetPosition = target->HitPosition(_flyTime);
+		_missileTimer = 0;
+		_fly = true;
+		_hit = false;
+		MakePath();
+	}
+};
 
 //----------------------------------------------//
 //----------------------------------------------//
@@ -216,7 +278,7 @@ SlowMissile::SlowMissile() {
 	_damage = IPoint(0, 0);
 	
 };
-
+/*
 SlowMissile::SlowMissile(FPoint position, FPoint tPosition, std::vector<MonsterParent::Ptr> & targets, int mSpeed, float fTime, float mFlyTimer, FPoint sFactor, int sRange, IPoint dmg, Render::TexturePtr tex) {
 	_missileType = "Slow";
 	_position = position;
@@ -235,7 +297,30 @@ SlowMissile::SlowMissile(FPoint position, FPoint tPosition, std::vector<MonsterP
 	_missilePathY.Clear();
 	_damage = dmg;
 	MakePath();
+};*/
+
+SlowMissile::SlowMissile(SlMissInfo inf, std::vector<MonsterParent::Ptr> & targets) {
+	_missileType = "Slow";
+	_position = inf._position;
+	_speed = FPoint(0, 0);
+	_modSpeed = inf._modSpeed;
+	float d = _position.GetDistanceTo(inf._tPosition);
+	_flyTime = d / _modSpeed;
+	_targetPosition = inf._tPosition;
+	
+	_missileTimer = 0;
+	_fly = true;
+	_hit = false;
+	_tex = nullptr;
+	_damage = inf._damage;
+	_targets = targets;
+	_slow = inf._sFactor;
+	_splashRange = inf._sRange;
+	_missilePathX.Clear();
+	_missilePathY.Clear();
+	MakePath();
 };
+
 
 SlowMissile::~SlowMissile() {
 };
@@ -273,6 +358,8 @@ void SlowMissile::Update(float dt) {
 	}
 };
 
+void SlowMissile::LoadFromXml(std::string, int) {
+};
 
 //----------------------------------------------//
 //----------------------------------------------//
@@ -306,10 +393,6 @@ DecayMissile::DecayMissile(FPoint position, MonsterParent * target, int mSpeed, 
 		float d = _position.GetDistanceTo(target->Position());
 		_flyTime = d / _modSpeed;
 		_targetPosition = target->HitPosition(_flyTime);
-	}
-	else {
-		_flyTime = fTime;
-		_targetPosition = target->HitPosition(fTime);
 	}
 	_missileTimer = 0;
 	_fly = true;
@@ -351,6 +434,9 @@ void DecayMissile::Update(float dt) {
 
 };
 
+void DecayMissile::LoadFromXml(std::string, int) {
+};
+
 //----------------------------------------------//
 //----------------------------------------------//
 //				Оглушающий снаряд				//
@@ -374,6 +460,7 @@ BashMissile::BashMissile() {
 	_target = nullptr;
 	_damage = IPoint(0, 0);
 };
+/*
 BashMissile::BashMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, FPoint bash, IPoint dmg, Render::TexturePtr tex) {
 	_missileType = "Bash";
 	_position = position;
@@ -397,6 +484,27 @@ BashMissile::BashMissile(FPoint position, MonsterParent * target, int mSpeed, fl
 	_damage = dmg;
 	MakePath();
 };
+*/
+BashMissile::BashMissile(BMissInfo inf) {
+	_missileType = "Bash";
+	_position = inf._position;
+	_speed = FPoint(0, 0);
+	_modSpeed = inf._modSpeed;
+	if (inf._target && _modSpeed>0) {
+		float d = _position.GetDistanceTo(inf._target->Position());
+		_flyTime = d / _modSpeed;
+		_targetPosition = inf._target->HitPosition(_flyTime);
+	}
+	_missileTimer = 0;
+	_fly = true;
+	_hit = false;
+	_bash = inf._bash;
+	_target = inf._target;
+	_damage = inf._damage;
+	MakePath();
+};
+
+
 BashMissile::~BashMissile() {};
 
 void BashMissile::Draw() {
@@ -424,6 +532,10 @@ void BashMissile::Update(float dt) {
 		_position.y = _missilePathY.getGlobalFrame(_missileTimer);
 	}
 };
+
+void BashMissile::LoadFromXml(std::string, int) {
+};
+
 
 //----------------------------------------------//
 //----------------------------------------------//
@@ -501,314 +613,7 @@ void SplashMissile::Update(float dt) {
 	}
 };
 
-
-
-
-/*
-
-//////////////////////////////
-//--------------------------//
-//----------Снаряд----------//
-//--------------------------//
-//////////////////////////////
-
-
-Missile::Missile() {
-	x = 0;
-	y = 0;
-	speed = 0;
-	targetPosX = 0;
-	targetPosY = 0;
-	missileFlyTime = 0;
-	missileTimer = 0;
-	fly = true;
-	dive = false;
-	missilePathX.Clear();
-	missilePathY.Clear();
-};
-
-Missile::Missile(float startX, float startY, float endX, float endY, int nSpeed) {
-	
-	x = startX;
-	y = startY;
-	fly = true;
-	dive = false;
-	//Запуск таймеров
-	
-	float distance = GetDistanceTo(endX, endY);
-	speed = nSpeed;
-	missileFlyTime = distance / speed;
-	missileTimer = missileFlyTime;
-	//Координаты цели
-	targetPosX = endX;
-	targetPosY = endY;
-	
-
-	//Расчет траектории
-	//Начальная точка
-	missilePathX.addKey(missileFlyTime, x);
-	missilePathY.addKey(missileFlyTime, y);
-	//Конечная точка
-	missilePathX.addKey(0, endX);
-	missilePathY.addKey(0, endY);
-	//Расчет
-	missilePathX.CalculateGradient();
-	missilePathY.CalculateGradient();
+void SplashMissile::LoadFromXml(std::string, int) {
 };
 
 
-
-Missile::~Missile() {
-	missilePathX.Clear();
-	missilePathY.Clear();
-};
-
-
-void Missile::Update(float dt) {
-	//Тик таймера снаряда
-	if (missileTimer - 2*dt <= 0) {
-		dive = true;
-	}
-	if (missileTimer > 0) {
-		missileTimer -= dt;
-	}
-	if (missileTimer < 0) {
-		missileTimer = 0;
-	}
-
-
-	if (missileTimer > 0) {
-		x = missilePathX.getGlobalFrame(missileTimer);
-		y = missilePathY.getGlobalFrame(missileTimer);;
-		
-	}
-	else {
-		missilePathX.Clear();
-		missilePathY.Clear();
-		x = 0;
-		y = 0;
-		
-		fly = false;
-	}
-	
-	
-
-
-};
-
-
-
-
-void  Missile::SetSpeed(int nSpeed) {
-	speed = nSpeed;
-};
-
-void  Missile::SetTargetPosX(float nTargetPosX) {
-	targetPosX = nTargetPosX;
-};
-
-void  Missile::SetTargetPosY(float nTargetPosY) {
-	targetPosY = nTargetPosY;
-};
-
-
-
-void  Missile::SetMissileFlyTime(float nFlyTime) {
-	missileFlyTime = nFlyTime;
-};
-
-void  Missile::SetMissileTimer(float nTimer) {
-	missileTimer = nTimer;
-};
-
-
-
-
-
-void Missile::CalculateFly() {
-	fly = true;
-	dive = false;
-	//Запуск таймеров
-	
-	float distance = GetDistanceTo(targetPosX, targetPosY);
-	missileFlyTime = distance / speed;
-	missileTimer = missileFlyTime;
-	missilePathX.addKey(missileFlyTime, x);
-	missilePathY.addKey(missileFlyTime, y);
-	//Конечная точка
-	missilePathX.addKey(0, targetPosX);
-	missilePathY.addKey(0, targetPosY);
-	//Расчет
-	missilePathX.CalculateGradient();
-	missilePathY.CalculateGradient();
-};
-
-
-
-int	  Missile::GetSpeed() {
-	return speed;
-};
-
-float Missile::GetTargetPosX() {
-	return targetPosX;
-};
-
-float Missile::GetTargetPosY() {
-	return targetPosY;
-};
-
-IPoint Missile::GetTargetPos() {
-	return IPoint(round(targetPosX), round(targetPosY));
-};
-
-float Missile::GetMissileFlyTime() {
-	return missileFlyTime;
-};
-
-float Missile::GetMissileTimer() {
-	return missileTimer;
-};
-
-bool Missile::Fly() {
-	return fly;
-};
-
-bool Missile::Dive() {
-	return dive;
-};
-
-
-//////////////////////////////
-//--------------------------//
-//----------Пушка-----------//
-//--------------------------//
-//////////////////////////////
-
-Cannon::Cannon()
-{
-	x = 0;
-	y = 0;
-	delay = 0.0;
-	reloadTimer = 0.0;
-	attackSpeed = 0;
-	range = 0;
-	splashRange = 0;
-    missileSpeed = 300;
-	missiles.clear();
-
-}
-
-
-Cannon::~Cannon()
-{
-}
-
-void Cannon::Update(float dt) {
-	
-	//Тик таймера перезарядки
-	if (reloadTimer > 0) {
-		reloadTimer -= dt;
-	}
-	if (reloadTimer < 0) {
-		reloadTimer = 0;
-	}
-	
-	for (int missile = 0; missile < missiles.size(); missile++) {
-		missiles[missile].Update(dt);
-	}
-	
-};
-
-bool Cannon::DelMissile(unsigned int missile) {
-	
-	if (missiles.size()>missile) {
-		missiles.erase(missiles.begin() + missile);
-		
-		return true;
-	}
-	else {
-		return false;
-	}
-};
-
-
-//Установка параметров атаки
-void Cannon::SetDelay(float newDelay) {
-	delay = newDelay;
-};
-
-void Cannon::SetReloadTimer(float timer) {
-	reloadTimer = timer;
-};
-
-void Cannon::SetAttackSpeed(int aSpeed) {
-	attackSpeed = aSpeed;
-};
-
-void Cannon::SetRange(int aRange) {
-	range = aRange;
-};
-
-void Cannon::SetSplashRange(int aSplash) {
-	splashRange = aSplash;
-};
-
-void Cannon::SetMissileSpeed(int mSpeed) {
-	missileSpeed = mSpeed;
-};
-
-//Выстрел
-bool Cannon::Shoot(float ltX, float ltY) {
-	if (reloadTimer == 0) {
-		
-		//Запуск таймеров
-		reloadTimer = delay;
-
-		float distance = GetDistanceTo(ltX, ltY);
-
-		float missileFlyTime = distance / missileSpeed;
-		
-		Missile missile = Missile(x, y, ltX, ltY, missileSpeed);
-		missiles.push_back(missile);
-		return true;
-		
-	}
-	else {
-		return false;
-	}
-	
-};
-
-
-
-
-
-//Доступ к членам
-
-float Cannon::GetDelay() {
-	return delay;
-};
-
-float Cannon::GetReloadTimer() {
-	return reloadTimer;
-};
-
-int	  Cannon::GetAttackSpeed() {
-	return attackSpeed;
-};
-
-int	  Cannon::GetRange() {
-	return range;
-};
-
-int   Cannon::GetSplashRange() {
-	return splashRange;
-};
-
-int	   Cannon::GetMissileSpeed() {
-	return missileSpeed;
-};
-std::vector<Missile> & Cannon::GetMissiles() {
-	return missiles;
-};
-*/

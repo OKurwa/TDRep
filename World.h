@@ -1,12 +1,7 @@
 #pragma once
 #include "MonsterAttack.h"
-enum TowerType {
-	Normal,
-	Splash,
-	Slow,
-	Decay,
-	Bash
-};
+#include "TowerParent.h"
+
 enum WorldState {
 	START,
 	LOSE,

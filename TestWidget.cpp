@@ -37,8 +37,11 @@ void TestWidget::Init()
 	_texButtons = Core::resourceManager.Get<Render::Texture>("Towers");
 	//TowerParent * t = new TowerParent(FPoint(32, 32), 0, 0, 0, 0, 0, nullptr);
 	//_towers.push_back(t);
-	
-
+	_towerPs.push_back(_towerFactory.createNormal());
+	_towerPs.push_back(_towerFactory.createSplash());
+	_towerPs.push_back(_towerFactory.createSlow());
+	_towerPs.push_back(_towerFactory.createDecay());
+	_towerPs.push_back(_towerFactory.createBash());
 
 }
 
@@ -226,33 +229,29 @@ bool TestWidget::MouseDown(const IPoint &mouse_pos)
 			TowerParent::Ptr t;
 			switch (_curTowerType)
 			{
-			case Normal:
-				t = new NormalTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, 0, IPoint(100, 100), nullptr);
-				t->SetPrice(50);
+			case NORMAL:
+				t = _towerFactory.createNormal();
 				break;
-			case Splash:
-				t = new SplashTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, _monsters, 0.5, 0, 192, 60, 0, IPoint(5, 10), nullptr);
-				t->SetPrice(50);
+			case SPLASH:
+				t = _towerFactory.createSplash();
 				break;
-			case Slow:
-				t = new SlowTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, _monsters, 0.5, 0, 192, 50, FPoint(0.7, 1), 0, IPoint(10, 30), nullptr);
-				t->SetPrice(50);
+			case SLOW:
+				t = _towerFactory.createSlow();
 				break;
-			case Decay:
-				t = new DecayTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, FPoint(15, 10), 0, IPoint(0, 0), nullptr);
-				t->SetPrice(50);
+			case DECAY:
+				t = _towerFactory.createDecay();
 				break;
-			case Bash:
-				t = new BashTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, FPoint(0.5, 1), 0, IPoint(5, 10), nullptr);
-				t->SetPrice(50);
+			case BASH:
+				t = _towerFactory.createBash();
 				break;
 			default:
-				t = new NormalTower(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2), pos1, 0.5, 0, 192, 0, IPoint(100, 100), nullptr);
-				t->SetPrice(50);
+				t = _towerFactory.createNormal();
 				break;
 			}
 
 			if (World::Instance().GoldSpend(t->Price())) {
+				t->SetCell(pos1);
+				t->SetPosition(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2));
 				_towers.push_back(t);
 			}
 			else{
@@ -327,23 +326,23 @@ void TestWidget::AcceptMessage(const Message& message)
 		}
 		if (code == '1')
 		{
-			_curTowerType = Normal;
+			_curTowerType = NORMAL;
 		}
 		if (code == '2')
 		{
-			_curTowerType = Splash;
+			_curTowerType = SPLASH;
 		}
 		if (code == '3')
 		{
-			_curTowerType = Slow;
+			_curTowerType = SLOW;
 		}
 		if (code == '4')
 		{
-			_curTowerType = Decay;
+			_curTowerType = DECAY;
 		}
 		if (code == '5')
 		{
-			_curTowerType = Bash;
+			_curTowerType = BASH;
 		}
 		if (code == 's') {
 			_fieldMap.Reset();
@@ -354,7 +353,7 @@ void TestWidget::AcceptMessage(const Message& message)
 			_spawnTimer = 0;
 			_spawnTime = 0.4;
 			_curMonsterAttack = 0;
-			_curTowerType = Normal;
+			_curTowerType = NORMAL;
 			_curMonsterCount = 0;
 
 			//for (int i = 0; i < _monsterAttack.GetAttack()[0].Count(); i++) {

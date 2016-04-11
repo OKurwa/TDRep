@@ -52,8 +52,8 @@ private:
 	float _spawnTime;
 	int   _curMonsterAttack;
 	int   _curMonsterCount;
-
-
+	TowerPrototypeFactory _towerFactory;
+	std::vector<TowerParent::Ptr> _towerPs;
 	std::vector<TowerParent::Ptr> _towers;     // наши башни на поле
 	std::vector<MonsterParent::Ptr> _monsters;    // текущие монстры на поле
 	FieldMap _fieldMap;
