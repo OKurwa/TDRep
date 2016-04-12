@@ -18,7 +18,7 @@ class FireParent {
 public:
 	typedef boost::intrusive_ptr<FireParent> Ptr;
 	FireParent();
-	FireParent(FPoint position,FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, std::string mType, IPoint dmg, Render::TexturePtr tex);
+	FireParent(FPoint position,FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, TowerType mType, IPoint dmg, Render::TexturePtr tex);
 	~FireParent() {};
 	
 	virtual void Draw() = 0;
@@ -29,7 +29,7 @@ public:
 	FPoint Position();
 	FPoint TargetPosition();
 	void SetPosition(FPoint);
-	std::string Type();
+	TowerType Type();
 	bool Fly();
 	bool Hit();
 	void MakePath();
@@ -49,7 +49,7 @@ public:
 	}
 protected:
 	int ref_cnt_;
-	std::string _missileType;
+	TowerType _missileType;
 	FPoint _position;
 	FPoint _targetPosition;
 	FPoint _speed;

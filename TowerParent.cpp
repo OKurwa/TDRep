@@ -12,7 +12,7 @@ using namespace rapidxml;
 //----------------------------------------------//
 
 TowerParent::TowerParent() {
-	_towerType = "name";
+	//_towerType = "name";
 	_position= FPoint(0,0);
 	_cell = IPoint(0, 0);
 	_target = nullptr;
@@ -25,7 +25,7 @@ TowerParent::TowerParent() {
 };
 
 TowerParent::TowerParent(FPoint position, IPoint cell, float rTime, float rTimer, int range, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
-	_towerType = "name";
+	//_towerType = "name";
 	_position = position;
 	_cell = cell;
 	_target = nullptr;
@@ -188,7 +188,7 @@ int	 TowerParent::Price() {
 //----------------------------------------------//
 
 NormalTower::NormalTower() {
-	_towerType = "Normal";
+	_towerType = TowerType::NORMAL;
 	_position = FPoint(0, 0);
 	_cell = IPoint(0, 0);
 	_target = nullptr;
@@ -202,7 +202,7 @@ NormalTower::NormalTower() {
 };
 
 NormalTower::NormalTower(FPoint position, IPoint cell, float rTime, float rTimer, int range, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
-	_towerType = "Normal";
+	_towerType = TowerType::NORMAL;
 	_position = position;
 	_cell = cell;
 	_target = nullptr;
@@ -272,7 +272,7 @@ void NormalTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 }
 void NormalTower::LoadFromXml(std::string filename) {
 	_lvl = 0;
-	_towerType = "Normal";
+	_towerType = TowerType::NORMAL;
 	_position = IPoint(0,0);
 	_cell = IPoint(0, 0);
 	_target = nullptr;
@@ -348,7 +348,7 @@ void NormalTower::SetPosition(FPoint pos) {
 //----------------------------------------------//
 
 SlowTower::SlowTower() {
-	_towerType = "Slow";
+	_towerType = TowerType::SLOW;
 	_position = FPoint(0, 0);
 	_cell = IPoint(0, 0);
 	_target = nullptr;
@@ -365,7 +365,7 @@ SlowTower::SlowTower() {
 };
 
 SlowTower::SlowTower(FPoint position, IPoint cell, std::vector<MonsterParent::Ptr> & targets, float rTime, float rTimer, int range, int sRange, FPoint sFactor, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
-	_towerType = "Slow";
+	_towerType = TowerType::SLOW;
 	_position = position;
 	_cell = cell;
 	_target = nullptr;
@@ -438,7 +438,7 @@ void SlowTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 
 void SlowTower::LoadFromXml(std::string filename) {
 
-	_towerType = "Slow";
+	_towerType = TowerType::SLOW;
 	_position = IPoint(0, 0);
 	_cell = IPoint(0, 0);
 	_target = nullptr;
@@ -561,7 +561,7 @@ void SlowTower::SetPosition(FPoint pos) {
 //----------------------------------------------//
 //----------------------------------------------//
 DecayTower::DecayTower() {
-	_towerType = "Decay";
+	_towerType = TowerType::DECAY;
 	_position = FPoint(0, 0);
 	_cell = IPoint(0, 0);
 	_target = nullptr;
@@ -576,7 +576,7 @@ DecayTower::DecayTower() {
 };
 
 DecayTower::DecayTower(FPoint position, IPoint cell, float rTime, float rTimer, int range, FPoint dFactor, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
-	_towerType = "Decay";
+	_towerType = TowerType::DECAY;
 	_position = position;
 	_cell = cell;
 	_target = nullptr;
@@ -645,7 +645,7 @@ void DecayTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 
 void DecayTower::LoadFromXml(std::string filename) {
 
-	_towerType = "Decay";
+	_towerType = TowerType::DECAY;
 	_position = IPoint(0, 0);
 	_cell = IPoint(0, 0);
 	_target = nullptr;
@@ -723,7 +723,7 @@ void DecayTower::SetPosition(FPoint pos) {
 //----------------------------------------------//
 //----------------------------------------------//
 BashTower::BashTower() {
-	_towerType = "Bash";
+	_towerType = TowerType::BASH;
 	_position = FPoint(0, 0);
 	_cell = IPoint(0, 0);
 	_target = nullptr;
@@ -738,7 +738,7 @@ BashTower::BashTower() {
 };
 
 BashTower::BashTower(FPoint position, IPoint cell, float rTime, float rTimer, int range, FPoint bash, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
-	_towerType = "Bash";
+	_towerType = TowerType::BASH;
 	_position = position;
 	_cell = cell;
 	_target = nullptr;
@@ -806,7 +806,7 @@ void BashTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 
 void BashTower::LoadFromXml(std::string filename) {
 
-	_towerType = "Bash";
+	_towerType = TowerType::BASH;
 	_position = IPoint(0, 0);
 	_cell = IPoint(0, 0);
 	_target = nullptr;
@@ -885,7 +885,7 @@ void BashTower::SetPosition(FPoint pos) {
 //----------------------------------------------//
 
 SplashTower::SplashTower() {
-	_towerType = "Splash";
+	_towerType = TowerType::SPLASH;
 	_position = FPoint(0, 0);
 	_cell = IPoint(0, 0);
 	_target = nullptr;
@@ -902,7 +902,7 @@ SplashTower::SplashTower() {
 };
 
 SplashTower::SplashTower(FPoint position, IPoint cell, std::vector<MonsterParent::Ptr> & targets, float rTime, float rTimer, int range, int sRange, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
-	_towerType = "Splash";
+	_towerType = TowerType::SPLASH;
 	_position = position;
 	_cell = cell;
 	_target = nullptr;
@@ -1013,7 +1013,7 @@ bool SplashTower::TakeAim(std::vector<MonsterParent::Ptr> & monsters) {
 
 void SplashTower::LoadFromXml(std::string filename) {
 
-	_towerType = "Splash";
+	_towerType = TowerType::SPLASH;
 	_position = IPoint(0, 0);
 	_cell = IPoint(0, 0);
 	_target = nullptr;

@@ -10,7 +10,7 @@ using namespace rapidxml;
 //----------------------------------------------//
 
 FireParent::FireParent() : ref_cnt_(0) {
-	_missileType = "";
+	//_missileType = "";
 	_position = FPoint(0,0);
 	_targetPosition = FPoint(0, 0);
 	_speed = FPoint(0, 0);
@@ -25,7 +25,7 @@ FireParent::FireParent() : ref_cnt_(0) {
 	_damage = IPoint(0, 0);
 };
 
-FireParent::FireParent(FPoint position, FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, std::string mType, IPoint dmg, Render::TexturePtr tex) : ref_cnt_(0) {
+FireParent::FireParent(FPoint position, FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, TowerType mType, IPoint dmg, Render::TexturePtr tex) : ref_cnt_(0) {
 	_missileType = mType;
 	_position = position;
 	_targetPosition = tPosition;
@@ -79,7 +79,7 @@ void FireParent::SetPosition(FPoint pos) {
 	_position = pos;
 };
 
-std::string FireParent::Type() {
+TowerType FireParent::Type() {
 	return _missileType;
 
 };
@@ -177,7 +177,7 @@ MonsterParent::Ptr  FireParent::TakeAim(std::vector<MonsterParent::Ptr> & monste
 //----------------------------------------------//
 //----------------------------------------------//
 NormalMissile::NormalMissile() {
-	_missileType = "Normal";
+	_missileType = TowerType::NORMAL;
 	_position = FPoint(0, 0);
 	_targetPosition = FPoint(0, 0);
 	_speed = FPoint(0, 0);
@@ -196,7 +196,7 @@ NormalMissile::NormalMissile() {
 
 
 NormalMissile::NormalMissile(NMissInfo inf) {
-	_missileType = "Normal";
+	_missileType = TowerType::NORMAL;
 	_position = inf._position;
 	_speed = FPoint(0, 0);
 	_modSpeed = inf._modSpeed;
@@ -248,7 +248,7 @@ void NormalMissile::Update(float dt) {
 };
 
 void NormalMissile::LoadFromXml(std::string filename, int index) {
-	_missileType = "Normal";
+	_missileType = TowerType::NORMAL;
 	_position = FPoint(0, 0);
 	_targetPosition = FPoint(0, 0);
 	_target = nullptr;
@@ -319,7 +319,7 @@ void NormalMissile::SetTarget(MonsterParent * target) {
 //----------------------------------------------//
 
 SlowMissile::SlowMissile() {
-	_missileType = "Slow";
+	_missileType = TowerType::SLOW;
 	_position = FPoint(0, 0);
 	_targetPosition = FPoint(0, 0);
 	_speed = FPoint(0, 0);
@@ -358,7 +358,7 @@ SlowMissile::SlowMissile(FPoint position, FPoint tPosition, std::vector<MonsterP
 };*/
 
 SlowMissile::SlowMissile(SlMissInfo inf, std::vector<MonsterParent::Ptr> & targets) {
-	_missileType = "Slow";
+	_missileType = TowerType::SLOW;
 	_position = inf._position;
 	_speed = FPoint(0, 0);
 	_modSpeed = inf._modSpeed;
@@ -481,7 +481,7 @@ MonsterParent::Ptr  SlowMissile::TakeAim(std::vector<MonsterParent::Ptr> & monst
 //----------------------------------------------//
 
 DecayMissile::DecayMissile() {
-	_missileType = "Decay";
+	_missileType = TowerType::DECAY;
 	_position = FPoint(0, 0);
 	_targetPosition = FPoint(0, 0);
 	_speed = FPoint(0, 0);
@@ -498,7 +498,7 @@ DecayMissile::DecayMissile() {
 	_damage = IPoint(0, 0);
 };
 DecayMissile::DecayMissile(DMissInfo inf) {
-	_missileType = "Decay";
+	_missileType = TowerType::DECAY;
 	_position = inf._position;
 	_speed = FPoint(0, 0);
 	_modSpeed = inf._modSpeed;
@@ -558,7 +558,7 @@ void DecayMissile::LoadFromXml(std::string, int) {
 //----------------------------------------------//
 
 BashMissile::BashMissile() {
-	_missileType = "Bash";
+	_missileType = TowerType::BASH;
 	_position = FPoint(0, 0);
 	_targetPosition = FPoint(0, 0);
 	_speed = FPoint(0, 0);
@@ -576,7 +576,7 @@ BashMissile::BashMissile() {
 };
 
 BashMissile::BashMissile(BMissInfo inf) {
-	_missileType = "Bash";
+	_missileType = TowerType::BASH;
 	_position = inf._position;
 	_speed = FPoint(0, 0);
 	_modSpeed = inf._modSpeed;
@@ -633,7 +633,7 @@ void BashMissile::LoadFromXml(std::string, int) {
 //----------------------------------------------//
 //----------------------------------------------//
 SplashMissile::SplashMissile() {
-	_missileType = "Splash";
+	_missileType = TowerType::SPLASH;
 	_position = FPoint(0, 0);
 	_targetPosition = FPoint(0, 0);
 	_speed = FPoint(0, 0);
@@ -651,7 +651,7 @@ SplashMissile::SplashMissile() {
 	
 };
 SplashMissile::SplashMissile(SpMissInfo inf, std::vector<MonsterParent::Ptr> & targets) {
-	_missileType = "Splash";
+	_missileType = TowerType::SPLASH;
 	_position = inf._position;
 	_speed = FPoint(0, 0);
 	_modSpeed = inf._modSpeed;

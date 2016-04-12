@@ -7,13 +7,7 @@
 //--------------------------//
 //////////////////////////////
 
-enum TowerType {
-	NORMAL,
-	SLOW,
-	SPLASH,
-	DECAY,
-	BASH
-};
+
 //----------------------------------------------//
 //----------------------------------------------//
 //			Базовый класс башни 				//
@@ -58,7 +52,7 @@ public:
 	int Price();
 protected:
 	int ref_cnt_;
-	std::string _towerType;
+	TowerType _towerType;
 	IPoint _damage;
 	FPoint _position;
 	IPoint _cell;

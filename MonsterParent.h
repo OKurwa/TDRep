@@ -11,7 +11,7 @@ public:
 
 	virtual void Draw() = 0;
 	virtual void Update(float dt);
-	virtual void TakeDamage(std::string effType, FPoint values, float damage) = 0;
+	virtual void TakeDamage(TowerType effType, FPoint values, float damage) = 0;
 	bool FindAWay();
 	std::vector<IPoint> FillAround(std::vector<IPoint> lastWaveFilled, std::vector<std::vector<int>> & map, int d);
 	bool Dead();
@@ -75,7 +75,7 @@ public:
 
 	void Draw();
 	void Update(float dt);
-	void TakeDamage(std::string effType, FPoint values, float damage);
+	void TakeDamage(TowerType effType, FPoint values, float damage);
 private:
 	float _reduceDamage;
 };
@@ -90,7 +90,7 @@ public:
 	void Draw();
 	void Update(float dt);
 	
-	void TakeDamage(std::string effType, FPoint values, float damage);
+	void TakeDamage(TowerType effType, FPoint values, float damage);
 private:
 
 };
@@ -104,7 +104,7 @@ public:
 
 	void Draw();
 	void Update(float dt);
-	void TakeDamage(std::string effType, FPoint values, float damage);
+	void TakeDamage(TowerType effType, FPoint values, float damage);
 
 private:
 	int _healPerSecond;
@@ -119,7 +119,7 @@ public:
 
 	void Draw();
 	void Update(float dt);
-	void TakeDamage(std::string effType, FPoint values, float damage);
+	void TakeDamage(TowerType effType, FPoint values, float damage);
 
 private:
 	

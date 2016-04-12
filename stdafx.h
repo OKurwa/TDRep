@@ -6,3 +6,10 @@
 #pragma once
 
 #include <PlayrixEngine.h>
+enum TowerType {
+	NORMAL,
+	SLOW,
+	SPLASH,
+	DECAY,
+	BASH
+};

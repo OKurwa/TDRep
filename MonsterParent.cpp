@@ -471,12 +471,12 @@ void NormalMonster::Update(float dt) {
 	_position.x = _curWaySplineX.getGlobalFrame(_moveTimer);
 	_position.y = _curWaySplineY.getGlobalFrame(_moveTimer);
 };
-void NormalMonster::TakeDamage(std::string effType, FPoint values, float damage) {
-	if (effType == "Slow")
+void NormalMonster::TakeDamage(TowerType effType, FPoint values, float damage) {
+	if (effType == TowerType::SLOW)
 		_slow = values;
-	if (effType == "Decay")
+	if (effType == TowerType::DECAY)
 		_decay = values;
-	if (effType == "Bash") {
+	if (effType == TowerType::BASH) {
 		values.x *= 100;
 		if (math::random(0, 100) <= values.x)
 			_bash = FPoint(1, values.y);
@@ -633,13 +633,13 @@ void BossMonster::Update(float dt) {
 	_position.x = _curWaySplineX.getGlobalFrame(_moveTimer);
 	_position.y = _curWaySplineY.getGlobalFrame(_moveTimer);
 };
-void BossMonster::TakeDamage(std::string effType, FPoint values, float damage) {
+void BossMonster::TakeDamage(TowerType effType, FPoint values, float damage) {
 	
 	//values.y *= 1 - _reduceDamage;
 	
-	if (effType == "Slow")
+	if (effType == TowerType::SLOW)
 		_slow = values;
-	if (effType == "Decay")
+	if (effType == TowerType::DECAY)
 		_decay =FPoint(values.x*2, values.y*2);
 	//if (effType == "Bash") {
 	//	values.x *= 100;
@@ -800,14 +800,14 @@ void ImmuneMonster::Update(float dt) {
 	_position.x = _curWaySplineX.getGlobalFrame(_moveTimer);
 	_position.y = _curWaySplineY.getGlobalFrame(_moveTimer);
 };
-void ImmuneMonster::TakeDamage(std::string effType, FPoint values, float damage) {
+void ImmuneMonster::TakeDamage(TowerType effType, FPoint values, float damage) {
 	
 	
 	//if (effType == "Slow")
 	//	_slow = values;
-	if (effType == "Decay")
+	if (effType == TowerType::DECAY)
 		_decay = values;
-	if (effType == "Bash") {
+	if (effType == TowerType::BASH) {
 		values.x *= 100;
 		if (math::random(0, 100) <= values.x) {
 			_bash = FPoint(1, values.y * 2);
@@ -972,8 +972,8 @@ void HealingMonster::Update(float dt) {
 	_position.x = _curWaySplineX.getGlobalFrame(_moveTimer);
 	_position.y = _curWaySplineY.getGlobalFrame(_moveTimer);
 };
-void HealingMonster::TakeDamage(std::string effType, FPoint values, float damage) {
-	if (effType == "Slow") {
+void HealingMonster::TakeDamage(TowerType effType, FPoint values, float damage) {
+	if (effType == TowerType::SLOW) {
 		_slow = FPoint(values.x * 2, values.y*1.5);
 		if (_slow.x > 1) {
 			_slow.x = 1;
@@ -982,7 +982,7 @@ void HealingMonster::TakeDamage(std::string effType, FPoint values, float damage
 		
 	//if (effType == "Decay")
 	//	_decay = values;
-	if (effType == "Bash") {
+	if (effType == TowerType::BASH) {
 		values.x *= 100;
 		if (math::random(0, 100) <= values.x)
 			_bash = FPoint(1, values.y);
