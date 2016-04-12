@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "FireParent.h"
 #include "MonsterParent.h"
+const short YOU_PASSED = 9999;
+const short YOU_SHALL_PASS = 9998;
+const short YOU_SHALL_NOT_PASS = -1;
 //----------------------------------------------//
 //----------------------------------------------//
 //			Базовый класс монстра 				//
@@ -121,16 +124,16 @@ bool MonsterParent::FindAWay() {
 			switch (_map->Cells()[i][j]->Type())
 			{
 			case PASS:
-				intMap[i][j] = 9998;
+				intMap[i][j] = YOU_SHALL_PASS;
 				break;
 			case SPAWN:
-				intMap[i][j] = 9998;
+				intMap[i][j] = YOU_SHALL_PASS;
 				break;
 			case LAIR:
-				intMap[i][j] = 9999;
+				intMap[i][j] = YOU_PASSED;
 				break;
 			default:
-				intMap[i][j] = -1;
+				intMap[i][j] = YOU_SHALL_NOT_PASS;
 				break;
 			}
 		}
@@ -143,9 +146,13 @@ bool MonsterParent::FindAWay() {
 	_currentWay.clear();
 	intMap[_curCell.x][_curCell.y] = 0;
 	int d = 0;
-	bool end = 0;
-
+	bool end = false;
+	std::vector<IPoint> wave;
+	wave.push_back(_curCell);
 	while (!end && d <= intMap.size() * intMap[0].size()) {//Пока не достигнут пункт назначения
+		wave = FillAround(wave, intMap, d);
+														   
+		/*												   
 		//Для каждой клетки карты,
 		for (int i = 0; i < intMap.size(); i++) {
 			for (int j = 0; j < intMap[i].size(); j++) {
@@ -158,9 +165,9 @@ bool MonsterParent::FindAWay() {
 							if (k >= 0 && k < intMap.size()) {
 								if (l >= 0 && l < intMap[k].size()) {
 									//Если смежная клетка не пункт назначения
-									if (intMap[k][l] != 9999) {
+									if (intMap[k][l] != YOU_PASSED) {
 										//и является проходимой и не помеченной волной
-										if (intMap[k][l] == 9998) {
+										if (intMap[k][l] == YOU_SHALL_PASS) {
 											intMap[k][l] = d + 1;//метим ее значением следующей волны.
 										}
 									}
@@ -188,7 +195,11 @@ bool MonsterParent::FindAWay() {
 			if (end)
 				break;//... карты
 		}
+		*/
 
+
+		if (_currentWay.size() > 0)
+			end = true;
 		++d;// Повышаем значение волны
 	}
 
@@ -233,8 +244,8 @@ bool MonsterParent::FindAWay() {
 
 	for (int i = 0; i < intMap.size(); i++) {
 		for (int j = 0; j < intMap[i].size(); j++) {
-			if (intMap[i][j]!=-1 && intMap[i][j]!=9999) {
-				intMap[i][j] = 9998;
+			if (intMap[i][j]!= YOU_SHALL_NOT_PASS && intMap[i][j]!= YOU_PASSED) {
+				intMap[i][j] = YOU_SHALL_PASS;
 			}
 		}
 	}
@@ -251,6 +262,45 @@ bool MonsterParent::FindAWay() {
 		
 
 };
+
+std::vector<IPoint> MonsterParent::FillAround(std::vector<IPoint> lastWaveFilled, std::vector<std::vector<int>> & map, int d) {
+	std::vector<IPoint> result;
+	bool end = false;
+	for (unsigned int cell = 0; cell < lastWaveFilled.size(); cell++) {
+		int i = lastWaveFilled[cell].x;
+		int j = lastWaveFilled[cell].y;
+		for (int k = i - 1; k <= i + 1; k++) {
+			for (int l = j - 1; l <= j + 1; l++) {
+				//не выходя за границы карты.
+				if (k >= 0 && k < map.size()) {
+					if (l >= 0 && l < map[k].size()) {
+						//Если смежная клетка не пункт назначения
+						if (map[k][l] != YOU_PASSED) {
+							//и является проходимой и не помеченной волной
+							if (map[k][l] == YOU_SHALL_PASS) {
+								map[k][l] = d + 1;//метим ее значением следующей волны.
+								result.push_back(IPoint(k, l));
+							}
+						}
+						else {
+							end = true;
+							_currentWay.push_back(IPoint(k, l));//Достигнут конец, добавляем в путь конечную точку 
+							break;//и прекращаем поиск пункта назначения... 
+						}
+					}
+				}
+
+			}
+
+			if (end)
+				break;//...среди смежных точек
+		}
+	}
+	return result;
+};
+
+
+
 
 bool MonsterParent::Dead() {
 	return _dead;

@@ -115,7 +115,61 @@ void FireParent::MakePath() {
 	_missilePathY.CalculateGradient();
 };
 
+MonsterParent::Ptr  FireParent::TakeAim(std::vector<MonsterParent::Ptr> & monsters, MonsterParent::Ptr target, int range) {
+	MonsterParent::Ptr resTarget = nullptr;
+	if (target == nullptr || target->Finish() || target->Dead()) {
+		float d = 9999;
+		int tarIndex = 9999;
+		for (int i = 0; i < monsters.size(); i++) {
+			if (!monsters[i].get()->Dead()) {
+				FPoint tarPos = monsters[i]->Position();
+				float tmpD = _position.GetDistanceTo(tarPos);
+				if (tmpD<d) {
+					d = tmpD;
+					tarIndex = i;
+				}
+			}
 
+		}
+		if (d <= range && tarIndex < 9999) {
+			resTarget = monsters[tarIndex];
+			_target = resTarget.get();
+			_flyTime = d / (float)_modSpeed;
+			_targetPosition = monsters[tarIndex]->HitPosition(d / (float)_modSpeed);
+			_missilePathX.Clear();
+			_missilePathY.Clear();
+			MakePath();
+			return resTarget;
+		}
+		else {
+			resTarget = nullptr;
+			return resTarget;
+		}
+
+	}
+	else {
+		FPoint tarPos = target->Position();
+		float tmpD = _position.GetDistanceTo(tarPos);
+
+		if (tmpD <= range) {
+			resTarget = target;
+			_target = resTarget.get();
+			_flyTime = tmpD / (float)_modSpeed;
+			_targetPosition = target->HitPosition(tmpD / (float)_modSpeed);
+			_missilePathX.Clear();
+			_missilePathY.Clear();
+			MakePath();
+			return resTarget;
+		}
+		else {
+			resTarget = nullptr;
+			return resTarget;
+		}
+
+	}
+
+
+};
 
 //----------------------------------------------//
 //----------------------------------------------//
@@ -241,6 +295,10 @@ void NormalMissile::LoadFromXml(std::string filename, int index) {
 	}
 };
 
+
+
+
+
 void NormalMissile::SetTarget(MonsterParent * target) {
 	_target = target;
 	if (target && _modSpeed>0) {
@@ -361,6 +419,61 @@ void SlowMissile::Update(float dt) {
 void SlowMissile::LoadFromXml(std::string, int) {
 };
 
+MonsterParent::Ptr  SlowMissile::TakeAim(std::vector<MonsterParent::Ptr> & monsters, MonsterParent::Ptr target, int range) {
+	MonsterParent::Ptr resTarget = nullptr;
+	if (target == nullptr || target->Finish() || target->Dead()) {
+		float d = 9999;
+		int tarIndex = 9999;
+		for (int i = 0; i < monsters.size(); i++) {
+			if (!monsters[i].get()->Dead()) {
+				FPoint tarPos = monsters[i]->Position();
+				float tmpD = _position.GetDistanceTo(tarPos);
+				if (tmpD<d) {
+					d = tmpD;
+					tarIndex = i;
+				}
+			}
+
+		}
+		if (d <= range && tarIndex < 9999) {
+			resTarget = monsters[tarIndex];
+			_targetPosition = monsters[tarIndex]->Position();
+			_targets = monsters;
+			_flyTime = d / _modSpeed;
+			_missilePathX.Clear();
+			_missilePathY.Clear();
+			MakePath();
+			return resTarget;
+		}
+		else {
+			resTarget = nullptr;
+			return resTarget;
+		}
+
+	}
+	else {
+		FPoint tarPos = target->Position();
+		float tmpD = _position.GetDistanceTo(tarPos);
+
+		if (tmpD <= range) {
+			resTarget = target;
+			_targetPosition = target->Position();
+			_targets = monsters;
+			_flyTime = tmpD / _modSpeed;
+			_missilePathX.Clear();
+			_missilePathY.Clear();
+			MakePath();
+			return resTarget;
+		}
+		else {
+			resTarget = nullptr;
+			return resTarget;
+		}
+
+	}
+
+};
+
 //----------------------------------------------//
 //----------------------------------------------//
 //				ќтравл€ющий снар€д				//
@@ -384,25 +497,26 @@ DecayMissile::DecayMissile() {
 	_target = nullptr;
 	_damage = IPoint(0, 0);
 };
-DecayMissile::DecayMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, FPoint decayFactor, IPoint dmg, Render::TexturePtr tex) {
+DecayMissile::DecayMissile(DMissInfo inf) {
 	_missileType = "Decay";
-	_position = position;
+	_position = inf._position;
 	_speed = FPoint(0, 0);
-	_modSpeed = mSpeed;
-	if (target && _modSpeed>0) {
-		float d = _position.GetDistanceTo(target->Position());
+	_modSpeed = inf._modSpeed;
+	if (inf._target && _modSpeed>0) {
+		float d = _position.GetDistanceTo(inf._target->Position());
 		_flyTime = d / _modSpeed;
-		_targetPosition = target->HitPosition(_flyTime);
+		_targetPosition = inf._target->HitPosition(_flyTime);
 	}
 	_missileTimer = 0;
 	_fly = true;
 	_hit = false;
-	_tex = tex;
-	_target = target;
-	_decay = decayFactor;
-	_damage = dmg;
+	_decay = inf._decay;
+	_target = inf._target;
+	_damage = inf._damage;
 	MakePath();
-};
+
+}
+
 DecayMissile::~DecayMissile() {};
 
 void DecayMissile::Draw() {
@@ -460,31 +574,7 @@ BashMissile::BashMissile() {
 	_target = nullptr;
 	_damage = IPoint(0, 0);
 };
-/*
-BashMissile::BashMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, FPoint bash, IPoint dmg, Render::TexturePtr tex) {
-	_missileType = "Bash";
-	_position = position;
-	_speed = FPoint(0, 0);
-	_modSpeed = mSpeed;
-	if (target && _modSpeed>0) {
-		float d = _position.GetDistanceTo(target->Position());
-		_flyTime = d / _modSpeed;
-		_targetPosition = target->HitPosition(_flyTime);
-	}
-	else {
-		_flyTime = fTime;
-		_targetPosition = target->HitPosition(fTime);
-	}
-	_missileTimer = 0;
-	_fly = true;
-	_hit = false;
-	_tex = tex;
-	_bash = bash;
-	_target = target;
-	_damage = dmg;
-	MakePath();
-};
-*/
+
 BashMissile::BashMissile(BMissInfo inf) {
 	_missileType = "Bash";
 	_position = inf._position;
@@ -560,22 +650,23 @@ SplashMissile::SplashMissile() {
 	
 	
 };
-SplashMissile::SplashMissile(FPoint position, FPoint tPosition, std::vector<MonsterParent::Ptr> & targets, int mSpeed, float fTime, float mFlyTimer, int sRange, IPoint dmg, Render::TexturePtr tex) {
+SplashMissile::SplashMissile(SpMissInfo inf, std::vector<MonsterParent::Ptr> & targets) {
 	_missileType = "Splash";
-	_position = position;
-	_targetPosition = tPosition;
+	_position = inf._position;
 	_speed = FPoint(0, 0);
-	_modSpeed = mSpeed;
-	_flyTime = fTime;
-	_missileTimer = mFlyTimer;
+	_modSpeed = inf._modSpeed;
+	float d = _position.GetDistanceTo(inf._tPosition);
+	_flyTime = d / _modSpeed;
+	_targetPosition = inf._tPosition;
+	_missileTimer = 0;
 	_fly = true;
 	_hit = false;
-	_tex = tex;
-	_splashRange = sRange;
-	_targets = targets;
+	_tex = nullptr;
+	_damage = inf._damage;
+	//_targets = targets;
+	_splashRange = inf._sRange;
 	_missilePathX.Clear();
 	_missilePathY.Clear();
-	_damage = dmg;
 	MakePath();
 };
 SplashMissile::~SplashMissile() {};
@@ -616,4 +707,57 @@ void SplashMissile::Update(float dt) {
 void SplashMissile::LoadFromXml(std::string, int) {
 };
 
+MonsterParent::Ptr  SplashMissile::TakeAim(std::vector<MonsterParent::Ptr> & monsters, MonsterParent::Ptr target, int range) {
+	MonsterParent::Ptr resTarget = nullptr;
+	if (target == nullptr || target->Finish() || target->Dead()) {
+		float d = 9999;
+		int tarIndex = 9999;
+		for (int i = 0; i < monsters.size(); i++) {
+			if (!monsters[i].get()->Dead()) {
+				FPoint tarPos = monsters[i]->Position();
+				float tmpD = _position.GetDistanceTo(tarPos);
+				if (tmpD<d) {
+					d = tmpD;
+					tarIndex = i;
+				}
+			}
 
+		}
+		if (d <= range && tarIndex < 9999) {
+			resTarget = monsters[tarIndex];
+			_targetPosition = monsters[tarIndex]->Position();
+			_targets = monsters;
+			_flyTime = d / _modSpeed;
+			_missilePathX.Clear();
+			_missilePathY.Clear();
+			MakePath();
+			return resTarget;
+		}
+		else {
+			resTarget = nullptr;
+			return resTarget;
+		}
+
+	}
+	else {
+		FPoint tarPos = target->Position();
+		float tmpD = _position.GetDistanceTo(tarPos);
+
+		if (tmpD <= range) {
+			resTarget = target;
+			_targetPosition = target->Position();
+			_targets = monsters;
+			_flyTime = tmpD / _modSpeed;
+			_missilePathX.Clear();
+			_missilePathY.Clear();
+			MakePath();
+			return resTarget;
+		}
+		else {
+			resTarget = nullptr;
+			return resTarget;
+		}
+
+	}
+
+};

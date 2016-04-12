@@ -13,6 +13,7 @@ public:
 	virtual void Update(float dt);
 	virtual void TakeDamage(std::string effType, FPoint values, float damage) = 0;
 	bool FindAWay();
+	std::vector<IPoint> FillAround(std::vector<IPoint> lastWaveFilled, std::vector<std::vector<int>> & map, int d);
 	bool Dead();
 	bool Finish();
 	float WayDistance();

@@ -30,6 +30,7 @@ public:
 
 	virtual void Draw();
 	virtual void Update(float dt);
+	virtual bool TakeAim(std::vector<MonsterParent::Ptr> & monsters);
 	virtual bool Shoot() = 0;
 	virtual Ptr clone() = 0;
 
@@ -37,10 +38,11 @@ public:
 	std::vector<FireParent::Ptr> & GetMissiles();
 	FPoint Position();
 	IPoint Cell();
-	void SetPosition(FPoint);
+	virtual void SetPosition(FPoint);
 	void SetCell(IPoint);
-	virtual bool TakeAim(std::vector<MonsterParent::Ptr> & monsters);
-
+	
+	virtual bool TakeAimMiss(std::vector<MonsterParent::Ptr> & monsters);
+	virtual void TryShoot(std::vector<MonsterParent::Ptr> & monsters) = 0;
 	friend void intrusive_ptr_add_ref(TowerParent*);
 	friend void intrusive_ptr_release(TowerParent*);
 	void AddRef() {
@@ -95,7 +97,9 @@ public:
 	//void Draw();
 	void Update(float dt);
 	bool Shoot();
+	void TryShoot(std::vector<MonsterParent::Ptr> & monsters);
 	void LoadFromXml(std::string filename);
+	void SetPosition(FPoint);
 private:
 	std::vector<NormalMissile::NMissInfo> _missilesPrototypes;
 };
@@ -120,8 +124,10 @@ public:
 	//void Draw();
 	void Update(float dt);
 	bool Shoot();
+	void TryShoot(std::vector<MonsterParent::Ptr> & monsters);
 	void LoadFromXml(std::string filename);
 	bool TakeAim(std::vector<MonsterParent::Ptr> & monsters);
+	void SetPosition(FPoint);
 private:
 	int    _splashRange;
 	FPoint _slow;
@@ -150,9 +156,12 @@ public:
 	void Update(float dt);
 
 	bool Shoot();
+	void TryShoot(std::vector<MonsterParent::Ptr> & monsters);
 	void LoadFromXml(std::string filename);
+	void SetPosition(FPoint);
 private:
 	FPoint _decay;
+	std::vector<DecayMissile::DMissInfo> _missilesPrototypes;
 };
 
 
@@ -176,7 +185,9 @@ public:
 	void Update(float dt);
 
 	bool Shoot();
+	void TryShoot(std::vector<MonsterParent::Ptr> & monsters);
 	void LoadFromXml(std::string filename);
+	void SetPosition(FPoint);
 private:
 	FPoint _bash;
 	std::vector<BashMissile::BMissInfo> _missilesPrototypes;
@@ -203,11 +214,14 @@ public:
 	void Update(float dt);
 
 	bool Shoot();
+	void TryShoot(std::vector<MonsterParent::Ptr> & monsters) ;
 	void LoadFromXml(std::string filename);
 	bool TakeAim(std::vector<MonsterParent::Ptr> & monsters);
+	void SetPosition(FPoint);
 private:
 	int    _splashRange;
 	std::vector<MonsterParent::Ptr> _targets;
+	std::vector<SplashMissile::SpMissInfo> _missilesPrototypes;
 };
 
 

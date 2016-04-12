@@ -102,9 +102,10 @@ void TestWidget::Update(float dt)
 	}
 
 	for (unsigned int i = 0; i < _towers.size(); i++) {
-		if (_towers[i]->TakeAim(_monsters)) {
-			_towers[i]->Shoot();
-		}
+		//if (_towers[i]->TakeAim(_monsters)) {
+		//	_towers[i]->Shoot();
+		//}
+		_towers[i]->TryShoot(_monsters);
 	}
 
 	//Задержка спавна монстра

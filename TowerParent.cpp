@@ -117,6 +117,7 @@ IPoint TowerParent::Cell() {
 
 void TowerParent::SetPosition(FPoint pos) {
 	_position = pos;
+	
 };
 
 void TowerParent::SetCell(IPoint cell) {
@@ -165,6 +166,12 @@ bool TowerParent::TakeAim(std::vector<MonsterParent::Ptr> & monsters) {
 	
 	
 };
+
+bool TowerParent::TakeAimMiss(std::vector<MonsterParent::Ptr> & monsters) {
+	return true;
+};
+
+
 
 void TowerParent::SetPrice(int p) {
 	_price = p;
@@ -247,6 +254,22 @@ bool NormalTower::Shoot() {
 	}
 };
 
+void NormalTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
+	
+	if (_reloadTimer == 0) {
+		FireParent::Ptr mis = new NormalMissile(_missilesPrototypes[_lvl]);
+		_target = mis->TakeAim(monsters, _target, _range).get();
+		if (_target) {
+
+			_missiles.push_back(mis);
+			_reloadTimer = _reloadTime;
+
+		}
+
+	}
+	
+
+}
 void NormalTower::LoadFromXml(std::string filename) {
 	_lvl = 0;
 	_towerType = "Normal";
@@ -288,6 +311,7 @@ void NormalTower::LoadFromXml(std::string filename) {
 				for (xml_node<>* missile = tower->first_node("Missile"); missile; missile = missile->next_sibling("Missile")) {
 					string id = missile->first_attribute("id")->value();
 					NormalMissile::NMissInfo info;
+					info._target = nullptr;
 					string value = missile->first_attribute("misSpeed")->value();
 					info._modSpeed = utils::lexical_cast<int>(value);
 					value = missile->first_attribute("minDMG")->value();
@@ -309,6 +333,12 @@ void NormalTower::LoadFromXml(std::string filename) {
 	
 
 
+};
+void NormalTower::SetPosition(FPoint pos) {
+	_position = pos;
+	for (unsigned int i = 0; i < _missilesPrototypes.size(); i++) {
+		_missilesPrototypes[i]._position = pos;
+	}
 };
 
 //----------------------------------------------//
@@ -390,6 +420,21 @@ bool SlowTower::Shoot() {
 		return false;
 	}
 };
+void SlowTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
+
+	if (_reloadTimer == 0) {
+		FireParent::Ptr mis = new SlowMissile(_missilesPrototypes[_lvl], monsters);
+		_target = mis->TakeAim(monsters, _target, _range).get();
+		if (_target) {
+			_missiles.push_back(mis);
+			_reloadTimer = _reloadTime;
+
+		}
+
+	}
+
+
+}
 
 void SlowTower::LoadFromXml(std::string filename) {
 
@@ -503,6 +548,13 @@ bool SlowTower::TakeAim(std::vector<MonsterParent::Ptr> & monsters) {
 	}
 };
 
+void SlowTower::SetPosition(FPoint pos) {
+	_position = pos;
+	for (unsigned int i = 0; i < _missilesPrototypes.size(); i++) {
+		_missilesPrototypes[i]._position = pos;
+	}
+};
+
 //----------------------------------------------//
 //----------------------------------------------//
 //				ќтравл€юща€ башн€	 			//
@@ -563,7 +615,9 @@ void DecayTower::Update(float dt) {
 
 bool DecayTower::Shoot() {
 	if (_reloadTimer == 0 && _target) {
-		FireParent::Ptr mis = new DecayMissile(_position,_target,0,0.1,0, _decay, _damage, nullptr);
+		_missilesPrototypes[_lvl]._position = _position;
+		_missilesPrototypes[_lvl]._target = _target;
+		FireParent::Ptr mis = new DecayMissile(_missilesPrototypes[_lvl]);
 		_missiles.push_back(mis);
 		_reloadTimer = _reloadTime;
 		return true;
@@ -572,6 +626,22 @@ bool DecayTower::Shoot() {
 		return false;
 	}
 };
+
+void DecayTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
+
+	if (_reloadTimer == 0) {
+		FireParent::Ptr mis = new DecayMissile(_missilesPrototypes[_lvl]);
+		_target = mis->TakeAim(monsters, _target, _range).get();
+		if (_target) {
+			_missiles.push_back(mis);
+			_reloadTimer = _reloadTime;
+
+		}
+
+	}
+
+
+}
 
 void DecayTower::LoadFromXml(std::string filename) {
 
@@ -601,22 +671,31 @@ void DecayTower::LoadFromXml(std::string filename) {
 				_tex = Core::resourceManager.Get<Render::Texture>(value);
 				value = tower->first_attribute("price")->value();
 				_price = utils::lexical_cast<int>(value);
-				xml_node<>* missile = tower->first_node("Missile");
-				value = missile->first_attribute("reload")->value();
+				value = tower->first_attribute("reload")->value();
 				_reloadTime = utils::lexical_cast<float>(value);
 				_reloadTimer = 0;
-				value = missile->first_attribute("misSpeed")->value();
-				_missileSpeed = utils::lexical_cast<int>(value);
-				value = missile->first_attribute("minDMG")->value();
-				_damage.x = utils::lexical_cast<int>(value);
-				value = missile->first_attribute("maxDMG")->value();
-				_damage.y = utils::lexical_cast<int>(value);
-				value = missile->first_attribute("range")->value();
+				value = tower->first_attribute("range")->value();
 				_range = utils::lexical_cast<int>(value);
-				value = missile->first_attribute("decay")->value();
-				_decay.x = utils::lexical_cast<int>(value);
-				value = missile->first_attribute("decayLenght")->value();
-				_decay.y = utils::lexical_cast<float>(value);
+				value = tower->first_attribute("lvlCount")->value();
+				_lvlCount = utils::lexical_cast<int>(value);
+				for (xml_node<>* missile = tower->first_node("Missile"); missile; missile = missile->next_sibling("Missile")) {
+					DecayMissile::DMissInfo info;
+					info._target = nullptr;
+					string id = missile->first_attribute("id")->value();
+
+					value = missile->first_attribute("misSpeed")->value();
+					info._modSpeed = utils::lexical_cast<int>(value);
+					value = missile->first_attribute("minDMG")->value();
+					info._damage.x = utils::lexical_cast<int>(value);
+					value = missile->first_attribute("maxDMG")->value();
+					info._damage.y = utils::lexical_cast<int>(value);
+
+					value = missile->first_attribute("decay")->value();
+					info._decay.x = utils::lexical_cast<int>(value);
+					value = missile->first_attribute("decayLenght")->value();
+					info._decay.y = utils::lexical_cast<float>(value);
+					_missilesPrototypes.push_back(info);
+				}
 			}
 		}
 
@@ -629,6 +708,13 @@ void DecayTower::LoadFromXml(std::string filename) {
 
 
 
+};
+
+void DecayTower::SetPosition(FPoint pos) {
+	_position = pos;
+	for (unsigned int i = 0; i < _missilesPrototypes.size(); i++) {
+		_missilesPrototypes[i]._position = pos;
+	}
 };
 
 //----------------------------------------------//
@@ -702,6 +788,22 @@ bool BashTower::Shoot() {
 	}
 };
 
+void BashTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
+
+	if (_reloadTimer == 0) {
+		FireParent::Ptr mis = new BashMissile(_missilesPrototypes[_lvl]);
+		_target = mis->TakeAim(monsters, _target, _range).get();
+		if (_target) {
+			_missiles.push_back(mis);
+			_reloadTimer = _reloadTime;
+
+		}
+
+	}
+
+
+}
+
 void BashTower::LoadFromXml(std::string filename) {
 
 	_towerType = "Bash";
@@ -739,6 +841,7 @@ void BashTower::LoadFromXml(std::string filename) {
 				_lvlCount = utils::lexical_cast<int>(value);
 				for (xml_node<>* missile = tower->first_node("Missile"); missile; missile = missile->next_sibling("Missile")) {
 					BashMissile::BMissInfo info;
+					info._target = nullptr;
 					string id = missile->first_attribute("id")->value();
 
 					value = missile->first_attribute("misSpeed")->value();
@@ -768,6 +871,12 @@ void BashTower::LoadFromXml(std::string filename) {
 };
 
 
+void BashTower::SetPosition(FPoint pos) {
+	_position = pos;
+	for (unsigned int i = 0; i < _missilesPrototypes.size(); i++) {
+		_missilesPrototypes[i]._position = pos;
+	}
+};
 
 //----------------------------------------------//
 //----------------------------------------------//
@@ -832,7 +941,9 @@ void SplashTower::Update(float dt) {
 
 bool SplashTower::Shoot() {
 	if (_reloadTimer == 0 && _target) {
-		FireParent::Ptr mis = new SplashMissile(_position, _target->Position(), _targets, 0, 0.5, 0, 90, _damage, nullptr);
+		_missilesPrototypes[_lvl]._position = _position;
+		_missilesPrototypes[_lvl]._tPosition = _target->Position();
+		FireParent::Ptr mis = new SplashMissile(_missilesPrototypes[_lvl], _targets);
 		_missiles.push_back(mis);
 		_reloadTimer = _reloadTime;
 		return true;
@@ -841,6 +952,21 @@ bool SplashTower::Shoot() {
 		return false;
 	}
 };
+void SplashTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
+
+	if (_reloadTimer == 0) {
+		FireParent::Ptr mis = new SplashMissile(_missilesPrototypes[_lvl],monsters);
+		_target = mis->TakeAim(monsters, _target, _range).get();
+		if (_target) {
+			_missiles.push_back(mis);
+			_reloadTimer = _reloadTime;
+
+		}
+
+	}
+
+
+}
 
 bool SplashTower::TakeAim(std::vector<MonsterParent::Ptr> & monsters) {
 	_targets = monsters;
@@ -913,37 +1039,28 @@ void SplashTower::LoadFromXml(std::string filename) {
 				_tex = Core::resourceManager.Get<Render::Texture>(value);
 				value = tower->first_attribute("price")->value();
 				_price = utils::lexical_cast<int>(value);
-				xml_node<>* missile = tower->first_node("Missile");
-				value = missile->first_attribute("reload")->value();
+				value = tower->first_attribute("reload")->value();
 				_reloadTime = utils::lexical_cast<float>(value);
 				_reloadTimer = 0;
-				value = missile->first_attribute("misSpeed")->value();
-				_missileSpeed = utils::lexical_cast<int>(value);
-				value = missile->first_attribute("minDMG")->value();
-				_damage.x = utils::lexical_cast<int>(value);
-				value = missile->first_attribute("maxDMG")->value();
-				_damage.y = utils::lexical_cast<int>(value);
-				value = missile->first_attribute("range")->value();
+				value = tower->first_attribute("range")->value();
 				_range = utils::lexical_cast<int>(value);
-				value = missile->first_attribute("splashRange")->value();
-				_splashRange = utils::lexical_cast<int>(value);
+				value = tower->first_attribute("lvlCount")->value();
+				_lvlCount = utils::lexical_cast<int>(value);
+				for (xml_node<>* missile = tower->first_node("Missile"); missile; missile = missile->next_sibling("Missile")) {
+					SplashMissile::SpMissInfo info;
+					string id = missile->first_attribute("id")->value();
 
+					value = missile->first_attribute("misSpeed")->value();
+					info._modSpeed = utils::lexical_cast<int>(value);
+					value = missile->first_attribute("minDMG")->value();
+					info._damage.x = utils::lexical_cast<int>(value);
+					value = missile->first_attribute("maxDMG")->value();
+					info._damage.y = utils::lexical_cast<int>(value);
 
-				/*
-				string texture = tower->first_attribute("texture")->value();
-				_tex = Core::resourceManager.Get<Render::Texture>(texture);
-				xml_node<>* missile = towers->first_node("Missile");
-				string reload = missile->first_attribute("reload")->value();
-				_reloadTime = utils::lexical_cast<float>(reload);
-				_reloadTimer = 0;
-				string misSpeed = missile->first_attribute("misSpeed")->value();
-				_missileSpeed = utils::lexical_cast<int>(misSpeed);
-				string minDMG = missile->first_attribute("minDMG")->value();
-				string maxDMG = missile->first_attribute("maxDMG")->value();
-				_damage = IPoint(utils::lexical_cast<int>(minDMG),utils::lexical_cast<int>(maxDMG));
-				string range = missile->first_attribute("range")->value();
-				_range = utils::lexical_cast<int>(range);
-				*/
+					value = missile->first_attribute("splashRange")->value();
+					info._sRange = utils::lexical_cast<int>(value);
+					_missilesPrototypes.push_back(info);
+				}
 			}
 		}
 
@@ -958,3 +1075,9 @@ void SplashTower::LoadFromXml(std::string filename) {
 
 };
 
+void SplashTower::SetPosition(FPoint pos) {
+	_position = pos;
+	for (unsigned int i = 0; i < _missilesPrototypes.size(); i++) {
+		_missilesPrototypes[i]._position = pos;
+	}
+};

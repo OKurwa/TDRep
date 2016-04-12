@@ -33,6 +33,9 @@ public:
 	bool Fly();
 	bool Hit();
 	void MakePath();
+
+	virtual MonsterParent::Ptr TakeAim(std::vector<MonsterParent::Ptr> & monsters, MonsterParent::Ptr target, int range);
+
 	friend void intrusive_ptr_add_ref(FireParent*);
 	friend void intrusive_ptr_release(FireParent*);
 	void AddRef() {
@@ -59,7 +62,7 @@ protected:
 	TimedSplinePath _missilePathY;
 	Render::TexturePtr _tex;
 	IPoint _damage;
-	
+	MonsterParent * _target;
 };
 inline void intrusive_ptr_add_ref(FireParent* e) { e->AddRef(); }
 inline void intrusive_ptr_release(FireParent* e) { e->Release(); }
@@ -94,8 +97,9 @@ public:
 	}
 	void LoadFromXml(std::string, int);
 	void SetTarget(MonsterParent * target);
+	//MonsterParent::Ptr  NormalMissile::TakeAim(std::vector<MonsterParent::Ptr> & monsters, MonsterParent::Ptr target, int range);
 private:
-	MonsterParent * _target;
+	
 };
 
 
@@ -127,6 +131,7 @@ public:
 		return new SlowMissile(*this);
 	}
 	void LoadFromXml(std::string, int);
+	MonsterParent::Ptr TakeAim(std::vector<MonsterParent::Ptr> & monsters, MonsterParent::Ptr target, int range);
 private:
 	FPoint _slow;
 	int _splashRange;
@@ -150,7 +155,8 @@ public:
 		FPoint _decay;
 	};
 	DecayMissile();
-	DecayMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, FPoint decay, IPoint dmg, Render::TexturePtr tex);
+	//DecayMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, FPoint decay, IPoint dmg, Render::TexturePtr tex);
+	DecayMissile(DMissInfo);
 	~DecayMissile();
 
 	void Draw();
@@ -160,7 +166,7 @@ public:
 	}
 	void LoadFromXml(std::string, int);
 private:
-	MonsterParent * _target;
+	
 	FPoint _decay;
 	//FPoint decay;
  };
@@ -191,7 +197,7 @@ public:
 	}
 	void LoadFromXml(std::string, int);
 private:
-	MonsterParent * _target;
+	
 	FPoint _bash;
 };
 
@@ -203,8 +209,16 @@ private:
 //----------------------------------------------//
 class SplashMissile : public FireParent {
 public:
+	struct SpMissInfo {
+		FPoint _position;
+		FPoint _tPosition;
+		int	_modSpeed;
+		IPoint _damage;
+		int _sRange;
+	};
 	SplashMissile();
-	SplashMissile(FPoint position, FPoint tPosition, std::vector<MonsterParent::Ptr> & targets, int mSpeed, float fTime, float mFlyTimer, int sRange, IPoint dmg, Render::TexturePtr tex);
+	//SplashMissile(FPoint position, FPoint tPosition, std::vector<MonsterParent::Ptr> & targets, int mSpeed, float fTime, float mFlyTimer, int sRange, IPoint dmg, Render::TexturePtr tex);
+	SplashMissile::SplashMissile(SpMissInfo inf, std::vector<MonsterParent::Ptr> & targets);
 	~SplashMissile();
 
 	void Draw();
@@ -213,6 +227,7 @@ public:
 		return new SplashMissile(*this);
 	}
 	void LoadFromXml(std::string, int);
+	MonsterParent::Ptr TakeAim(std::vector<MonsterParent::Ptr> & monsters, MonsterParent::Ptr target, int range);
 private:
 	int _splashRange;
 	std::vector<MonsterParent::Ptr> _targets;
