@@ -91,7 +91,8 @@ void TestWidget::Draw()
 
 void TestWidget::Update(float dt)
 {	
-
+	if (World::Instance().State() == LOSE || World::Instance().State() == WIN)
+		dt *= 0;
 	//dt *= 0.5;
 	_fieldMap.Update(dt);
 	for (unsigned int i = 0; i < _monsters.size(); i++) {

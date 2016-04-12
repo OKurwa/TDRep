@@ -99,8 +99,38 @@ void MonsterParent::Draw() {
 };
 
 void MonsterParent::Update(float dt) {
-	_moveTimer += dt;
-	_curWayDistance -= _modSpeed*dt;
+	//Таймер замедления
+	if (_slow.y <= 0) {
+		_slow = FPoint(0, 0);
+	}
+	else {
+		_slow.y -= dt;
+	}
+	//Таймер отравления
+	if (_decay.y <= 0) {
+		_decay = FPoint(0, 0);
+	}
+	else {
+		_decay.y -= dt;
+	}
+	//Таймер оглушения
+	if (_bash.y <= 0) {
+		_bash = FPoint(0, 0);
+	}
+	else {
+		_bash.y -= dt;
+	}
+
+	_hp -= _decay.x * dt;
+
+	if (_hp <= 0) {
+		_dead = true;
+	}
+	float edt = dt;
+	edt *= (1 - _slow.x)*(1 - _bash.x);
+
+	_moveTimer += edt;
+	_curWayDistance -= _modSpeed*edt;
 	if (_curWayDistance <= 0)
 		_finish = true;
 	_position.x = _curWaySplineX.getGlobalFrame(_moveTimer);
@@ -151,53 +181,6 @@ bool MonsterParent::FindAWay() {
 	wave.push_back(_curCell);
 	while (!end && d <= intMap.size() * intMap[0].size()) {//Пока не достигнут пункт назначения
 		wave = FillAround(wave, intMap, d);
-														   
-		/*												   
-		//Для каждой клетки карты,
-		for (int i = 0; i < intMap.size(); i++) {
-			for (int j = 0; j < intMap[i].size(); j++) {
-				// которая имеет текущее значение волны,
-				if (intMap[i][j] == d) {
-					// обходим смежные клетки,
-					for (int k = i - 1; k <= i + 1; k++) {
-						for (int l = j - 1; l <= j + 1; l++) {
-							//не выходя за границы карты.
-							if (k >= 0 && k < intMap.size()) {
-								if (l >= 0 && l < intMap[k].size()) {
-									//Если смежная клетка не пункт назначения
-									if (intMap[k][l] != YOU_PASSED) {
-										//и является проходимой и не помеченной волной
-										if (intMap[k][l] == YOU_SHALL_PASS) {
-											intMap[k][l] = d + 1;//метим ее значением следующей волны.
-										}
-									}
-									else {
-										end = true;
-										_currentWay.push_back(IPoint(k, l));//Достигнут конец, добавляем в путь конечную точку 
-										break;//и прекращаем поиск пункта назначения... 
-									}
-								}
-							}
-
-						}
-
-						if (end)
-							break;//...среди смежных точек
-					}
-
-				}
-
-
-				if (end)
-					break;//Прекращаем обход ...
-			}
-
-			if (end)
-				break;//... карты
-		}
-		*/
-
-
 		if (_currentWay.size() > 0)
 			end = true;
 		++d;// Повышаем значение волны
@@ -353,22 +336,6 @@ NormalMonster::NormalMonster() {
 };
 NormalMonster::NormalMonster(FPoint position, int modSpeed, int hp, FieldMap * map, Render::TexturePtr skin) {
 	_position = position;
-	/*
-	float sX = math::random(-modSpeed, modSpeed);
-	float sY;
-	if (math::random(-1, 1) < 0) {
-	sY = -1;
-
-	}
-	else {
-	sY = 1;
-	};
-
-	sY *= sqrt(modSpeed*modSpeed - sX*sX);
-
-
-	_speed = FPoint(sX, sY);
-	*/
 	_modSpeed = modSpeed;
 	
 	_map = map;
@@ -433,44 +400,7 @@ void NormalMonster::Draw() {
 	}
 	
 };
-void NormalMonster::Update(float dt) {
-	//Таймер замедления
-	if (_slow.y <= 0) {
-		_slow = FPoint(0,0);
-	}
-	else {
-		_slow.y -= dt;
-	}
-	//Таймер отравления
-	if (_decay.y <= 0) {
-		_decay = FPoint(0, 0);
-	}
-	else {
-		_decay.y -= dt;
-	}
-	//Таймер оглушения
-	if (_bash.y <= 0) {
-		_bash = FPoint(0, 0);
-	}
-	else {
-		_bash.y -= dt;
-	}
-	
-	_hp -= _decay.x * dt;
 
-	if (_hp <= 0) {
-		_dead = true;
-	}
-	float edt = dt;
-	edt *= (1 - _slow.x)*(1 - _bash.x);
-
-	_moveTimer += edt;
-	_curWayDistance -= _modSpeed*edt;
-	if (_curWayDistance <= 0)
-		_finish = true;
-	_position.x = _curWaySplineX.getGlobalFrame(_moveTimer);
-	_position.y = _curWaySplineY.getGlobalFrame(_moveTimer);
-};
 void NormalMonster::TakeDamage(TowerType effType, FPoint values, float damage) {
 	if (effType == TowerType::SLOW)
 		_slow = values;
@@ -514,22 +444,6 @@ BossMonster::BossMonster() {
 };
 BossMonster::BossMonster(FPoint position, int modSpeed, int hp, FieldMap * map, float reduceDamage, Render::TexturePtr skin) {
 	_position = position;
-	/*
-	float sX = math::random(-modSpeed, modSpeed);
-	float sY;
-	if (math::random(-1, 1) < 0) {
-	sY = -1;
-
-	}
-	else {
-	sY = 1;
-	};
-
-	sY *= sqrt(modSpeed*modSpeed - sX*sX);
-
-
-	_speed = FPoint(sX, sY);
-	*/
 	_modSpeed = modSpeed;
 
 	_map = map;
@@ -595,44 +509,7 @@ void BossMonster::Draw() {
 	}
 
 };
-void BossMonster::Update(float dt) {
-	//Таймер замедления
-	if (_slow.y <= 0) {
-		_slow = FPoint(0, 0);
-	}
-	else {
-		_slow.y -= dt;
-	}
-	//Таймер отравления
-	if (_decay.y <= 0) {
-		_decay = FPoint(0, 0);
-	}
-	else {
-		_decay.y -= dt;
-	}
-	//Таймер оглушения
-	if (_bash.y <= 0) {
-		_bash = FPoint(0, 0);
-	}
-	else {
-		_bash.y -= dt;
-	}
 
-	_hp -= _decay.x * dt;
-
-	if (_hp <= 0) {
-		_dead = true;
-	}
-	float edt = dt;
-	edt *= (1 - _slow.x)*(1 - _bash.x);
-
-	_moveTimer += edt;
-	_curWayDistance -= _modSpeed*edt;
-	if (_curWayDistance <= 0)
-		_finish = true;
-	_position.x = _curWaySplineX.getGlobalFrame(_moveTimer);
-	_position.y = _curWaySplineY.getGlobalFrame(_moveTimer);
-};
 void BossMonster::TakeDamage(TowerType effType, FPoint values, float damage) {
 	
 	//values.y *= 1 - _reduceDamage;
@@ -682,22 +559,7 @@ ImmuneMonster::ImmuneMonster() {
 };
 ImmuneMonster::ImmuneMonster(FPoint position, int modSpeed, int hp, FieldMap * map, Render::TexturePtr skin) {
 	_position = position;
-	/*
-	float sX = math::random(-modSpeed, modSpeed);
-	float sY;
-	if (math::random(-1, 1) < 0) {
-	sY = -1;
-
-	}
-	else {
-	sY = 1;
-	};
-
-	sY *= sqrt(modSpeed*modSpeed - sX*sX);
-
-
-	_speed = FPoint(sX, sY);
-	*/
+	
 	_modSpeed = modSpeed;
 
 	_map = map;
@@ -762,44 +624,7 @@ void ImmuneMonster::Draw() {
 	}
 
 };
-void ImmuneMonster::Update(float dt) {
-	//Таймер замедления
-	if (_slow.y <= 0) {
-		_slow = FPoint(0, 0);
-	}
-	else {
-		_slow.y -= dt;
-	}
-	//Таймер отравления
-	if (_decay.y <= 0) {
-		_decay = FPoint(0, 0);
-	}
-	else {
-		_decay.y -= dt;
-	}
-	//Таймер оглушения
-	if (_bash.y <= 0) {
-		_bash = FPoint(0, 0);
-	}
-	else {
-		_bash.y -= dt;
-	}
 
-	_hp -= _decay.x * dt;
-
-	if (_hp <= 0) {
-		_dead = true;
-	}
-	float edt = dt;
-	edt *= (1 - _slow.x)*(1 - _bash.x);
-
-	_moveTimer += edt;
-	_curWayDistance -= _modSpeed*edt;
-	if (_curWayDistance <= 0)
-		_finish = true;
-	_position.x = _curWaySplineX.getGlobalFrame(_moveTimer);
-	_position.y = _curWaySplineY.getGlobalFrame(_moveTimer);
-};
 void ImmuneMonster::TakeDamage(TowerType effType, FPoint values, float damage) {
 	
 	
@@ -846,22 +671,7 @@ HealingMonster::HealingMonster() {
 };
 HealingMonster::HealingMonster(FPoint position, int modSpeed, int hp, FieldMap * map, Render::TexturePtr skin, int healPerSecond) {
 	_position = position;
-	/*
-	float sX = math::random(-modSpeed, modSpeed);
-	float sY;
-	if (math::random(-1, 1) < 0) {
-	sY = -1;
-
-	}
-	else {
-	sY = 1;
-	};
-
-	sY *= sqrt(modSpeed*modSpeed - sX*sX);
-
-
-	_speed = FPoint(sX, sY);
-	*/
+	
 	_modSpeed = modSpeed;
 
 	_map = map;
@@ -927,51 +737,7 @@ void HealingMonster::Draw() {
 	}
 
 };
-void HealingMonster::Update(float dt) {
-	//Таймер замедления
-	if (_slow.y <= 0) {
-		_slow = FPoint(0, 0);
-	}
-	else {
-		_slow.y -= dt;
-	}
-	//Таймер отравления
-	if (_decay.y <= 0) {
-		_decay = FPoint(0, 0);
-	}
-	else {
-		_decay.y -= dt;
-	}
-	//Таймер оглушения
-	if (_bash.y <= 0) {
-		_bash = FPoint(0, 0);
-	}
-	else {
-		_bash.y -= dt;
-	}
 
-	_hp -= _decay.x * dt;
-
-	if (_hp <= 0) {
-		_dead = true;
-	}
-	if (!_dead) {
-		_hp += dt *_healPerSecond;
-		if(_hp>_maxHp)
-		_hp =_maxHp;
-	}
-		
-
-	float edt = dt;
-	edt *= (1 - _slow.x)*(1 - _bash.x);
-
-	_moveTimer += edt;
-	_curWayDistance -= _modSpeed*edt;
-	if (_curWayDistance <= 0)
-		_finish = true;
-	_position.x = _curWaySplineX.getGlobalFrame(_moveTimer);
-	_position.y = _curWaySplineY.getGlobalFrame(_moveTimer);
-};
 void HealingMonster::TakeDamage(TowerType effType, FPoint values, float damage) {
 	if (effType == TowerType::SLOW) {
 		_slow = FPoint(values.x * 2, values.y*1.5);

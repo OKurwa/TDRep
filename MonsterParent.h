@@ -74,7 +74,7 @@ public:
 	~BossMonster();
 
 	void Draw();
-	void Update(float dt);
+	//void Update(float dt);
 	void TakeDamage(TowerType effType, FPoint values, float damage);
 private:
 	float _reduceDamage;
@@ -88,7 +88,7 @@ public:
 	~ImmuneMonster();
 
 	void Draw();
-	void Update(float dt);
+	//void Update(float dt);
 	
 	void TakeDamage(TowerType effType, FPoint values, float damage);
 private:
@@ -103,7 +103,7 @@ public:
 	~HealingMonster();
 
 	void Draw();
-	void Update(float dt);
+	//void Update(float dt);
 	void TakeDamage(TowerType effType, FPoint values, float damage);
 
 private:
@@ -118,7 +118,7 @@ public:
 	~NormalMonster();
 
 	void Draw();
-	void Update(float dt);
+	//void Update(float dt);
 	void TakeDamage(TowerType effType, FPoint values, float damage);
 
 private:
