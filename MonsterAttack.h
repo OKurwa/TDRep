@@ -1,5 +1,5 @@
 #pragma once
-
+#include "MonsterParent.h"
 class Attack {
 public:
 	Attack(); 
@@ -47,8 +47,10 @@ public:
 	void SaveToFile(std::string fileName);
 	float Delay();
 	std::vector<Attack> & GetAttack();
+	std::vector<MonsterParent::Ptr> & GetAttackPrototypes();
 private:
 	std::vector<Attack> _attacks;
+	std::vector<MonsterParent::Ptr> _attackPrototypes;
 	float _attackDelay;
 };
 

@@ -210,20 +210,92 @@ void MonsterAttack::LoadFromXml(std::string filename) {
 		for (xml_node<>* attack = attacks->first_node("Attack"); attack; attack = attack->next_sibling("Attack")) {
 			
 			Attack atk;
-			string name = attack->first_attribute("name")->value();
-			atk.SetName(name);
-			string mType = attack->first_attribute("type")->value();
-			atk.SetType(mType);
-			string count = attack->first_attribute("count")->value();
-			atk.SetCount(utils::lexical_cast<int>(count));
-			string hp = attack->first_attribute("hp")->value();
-			atk.SetMaxHp(utils::lexical_cast<int>(hp));
-			string speed = attack->first_attribute("speed")->value();
-			atk.SetSpeed(utils::lexical_cast<int>(speed));
-			string gpm = attack->first_attribute("goldPM")->value();
-			atk.SetMGold(utils::lexical_cast<int>(gpm));
-			string gpa = attack->first_attribute("goldAA")->value();
-			atk.SetWGold(utils::lexical_cast<int>(gpa));
+			string value = attack->first_attribute("name")->value();
+			atk.SetName(value);
+			value = attack->first_attribute("type")->value();
+			atk.SetType(value);
+			value = attack->first_attribute("count")->value();
+			atk.SetCount(utils::lexical_cast<int>(value));
+			value = attack->first_attribute("hp")->value();
+			atk.SetMaxHp(utils::lexical_cast<int>(value));
+			value = attack->first_attribute("speed")->value();
+			atk.SetSpeed(utils::lexical_cast<int>(value));
+			value = attack->first_attribute("goldPM")->value();
+			atk.SetMGold(utils::lexical_cast<int>(value));
+			value = attack->first_attribute("goldAA")->value();
+			atk.SetWGold(utils::lexical_cast<int>(value));
+			if (atk.Type() == "Normal") {
+				NormalMonster::NormMInfo info;
+				info._position = FPoint(0, 0);
+				info._hp = atk.MaxHp();
+				info._modSpeed = atk.Speed();
+				info._map = nullptr;
+				value = attack->first_attribute("runAnimation")->value();
+				info._runAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+				
+				value = attack->first_attribute("idleAnimation")->value();
+				info._idleAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+				
+				value = attack->first_attribute("dieAnimation")->value();
+				info._dieAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+				
+				_attackPrototypes.push_back(new NormalMonster(info));
+			}
+			if (atk.Type() == "Immune") {
+				ImmuneMonster::ImmMInfo info;
+				info._position = FPoint(0, 0);
+				info._hp = atk.MaxHp();
+				info._modSpeed = atk.Speed();
+				info._map = nullptr;
+				value = attack->first_attribute("runAnimation")->value();
+				info._runAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+
+				value = attack->first_attribute("idleAnimation")->value();
+				info._idleAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+
+				value = attack->first_attribute("dieAnimation")->value();
+				info._dieAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+				_attackPrototypes.push_back(new ImmuneMonster(info));
+			}
+			if (atk.Type() == "Healing") {
+				HealingMonster::HealMInfo info;
+				info._position = FPoint(0, 0);
+				info._hp = atk.MaxHp();
+				info._modSpeed = atk.Speed();
+				info._map = nullptr;
+				info._healPerSecond = 5 + 1 * _attacks.size();
+				value = attack->first_attribute("runAnimation")->value();
+				info._runAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+
+				value = attack->first_attribute("idleAnimation")->value();
+				info._idleAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+
+				value = attack->first_attribute("dieAnimation")->value();
+				info._dieAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+				_attackPrototypes.push_back(new HealingMonster(info));
+			}
+			if (atk.Type() == "Boss") {
+				BossMonster::BossMInfo info;
+				info._position = FPoint(0, 0);
+				info._hp = atk.MaxHp();
+				info._modSpeed = atk.Speed();
+				info._map = nullptr;
+				info._reduceDamage = 0.3 + 0.01 * _attacks.size();
+				value = attack->first_attribute("runAnimation")->value();
+				info._runAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+
+				value = attack->first_attribute("idleAnimation")->value();
+				info._idleAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+
+				value = attack->first_attribute("dieAnimation")->value();
+				info._dieAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+				_attackPrototypes.push_back(new BossMonster(info));
+			}
+			
+
+
+
+
 			_attacks.push_back(atk);
 		}
 
@@ -278,7 +350,9 @@ std::vector<Attack> & MonsterAttack::GetAttack() {
 	return _attacks;
 };
 
-
+std::vector<MonsterParent::Ptr> & MonsterAttack::GetAttackPrototypes() {
+	return _attackPrototypes;
+};
 
 
 

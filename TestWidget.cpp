@@ -22,7 +22,7 @@ TestWidget::TestWidget(const std::string& name, rapidxml::xml_node<>* elem)
 
 void TestWidget::Init()
 {
-	_fieldMap.LoadFromFile("loadMap.txt");
+	//_fieldMap.LoadFromFile("loadMap.txt");
 	_fieldMap.LoadFromXml("NewMap.xml");
 
 	IPoint curCell;
@@ -123,6 +123,11 @@ void TestWidget::Update(float dt)
 				int hp = _monsterAttack.GetAttack()[_curMonsterAttack].MaxHp();
 				int spd = _monsterAttack.GetAttack()[_curMonsterAttack].Speed();
 				MonsterParent::Ptr m;
+				m = _monsterAttack.GetAttackPrototypes()[_curMonsterAttack]->clone();
+				m->SetPosition(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), &_fieldMap);
+				
+				/*
+				
 				if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Normal") {
 					//Обычный монстр
 					m = new NormalMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr);
@@ -143,7 +148,7 @@ void TestWidget::Update(float dt)
 					//Обычный монстр
 					m = new NormalMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr);
 				}
-
+				*/
 
 				//Регенерирующий монстр
 				//boost::intrusive_ptr<MonsterParent> m = new HealingMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), 64, 200, &_fieldMap, nullptr, 5);
@@ -161,7 +166,7 @@ void TestWidget::Update(float dt)
 		}
 
 		for (std::vector<MonsterParent::Ptr>::iterator it = _monsters.begin(); it != _monsters.end();) {
-			if ((*it)->Dead()) {
+			if ((*it)->Dead() && (*it)->EndDeadAnim()) {
 				World::Instance().GoldAdd(_monsterAttack.GetAttack()[_curMonsterAttack].MGold());
 				it = _monsters.erase(it);
 			}else if((*it)->Finish()) {

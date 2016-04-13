@@ -53,8 +53,7 @@ protected:
 
 	int ref_cnt_;
 
-	AnimAngles _attackAnimAngles;
-	AnimAngles _idleAnimAngles;
+	
 	TowerType _towerType;
 	IPoint _damage;
 	FPoint _position;
@@ -74,6 +73,8 @@ protected:
 	Render::TexturePtr _tex;
 	Render::AnimationPtr _idleAnim;
 	Render::AnimationPtr _atkAnim;
+	AnimAngles _attackAnimAngles;
+	AnimAngles _idleAnimAngles;
 };
 inline void intrusive_ptr_add_ref(TowerParent* e) { e->AddRef(); }
 inline void intrusive_ptr_release(TowerParent* e) { e->Release(); }
