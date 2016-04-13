@@ -42,7 +42,24 @@ TowerParent::~TowerParent() {
 };
 
 void TowerParent::Draw() {
-	if (_tex) {
+
+	if (_idleAnim && _atkAnim) {
+		if (_atkAnim->IsFinished()) {
+			Render::device.SetTexturing(true);
+
+			_idleAnim->Draw(IPoint(math::round(_position.x) - 64, math::round(_position.y) - 40));
+			
+			Render::device.SetTexturing(false);
+		}
+		else if (!_atkAnim->IsFinished()) {
+			Render::device.SetTexturing(true);
+			_atkAnim->Draw(IPoint(math::round(_position.x) - 64, math::round(_position.y) - 40));
+			Render::device.SetTexturing(false);
+		}
+
+	}
+	
+	else if (_tex) {
 		IRect r = IRect(_position.x - 64, _position.y - 40, 128, 128);
 		FRect tmp = FRect(0, 1 / 32.0, 0.125, 0.250);
 		Render::device.SetTexturing(true);
@@ -71,6 +88,12 @@ void TowerParent::Draw() {
 };
 
 void TowerParent::Update(float dt) {
+	if (_idleAnim  && _atkAnim->IsFinished()) {
+		_idleAnim->Update(dt);
+	}
+	if (_atkAnim) {
+		_atkAnim->Update(dt);
+	}
 	if (_reloadTimer > 0)
 		_reloadTimer -= dt;
 	if (_reloadTimer < 0)
@@ -89,6 +112,79 @@ void TowerParent::Update(float dt) {
 			
 	}
 };
+
+void TowerParent::UpdateAnimAngle(MonsterParent * target) {
+	if (target) {
+
+
+
+		float angle = math::atan(target->Position().y - _position.y, target->Position().x - _position.x)*180.0 / math::PI;
+		if (_idleAnim && _atkAnim) {
+			_idleAnim->setLoop(false);
+			_idleAnim->setPlayback(false);
+			if (angle > -157.5 && angle <= -112.5) {
+				_atkAnim->setFirstPlayedFrame(_attackAnimAngles._a315.x);
+				_atkAnim->setLastPlayedFrame(_attackAnimAngles._a315.y);
+				_idleAnim->setFirstPlayedFrame(_idleAnimAngles._a315.x);
+				_idleAnim->setLastPlayedFrame(_idleAnimAngles._a315.y);
+			}
+
+			if (angle > -112.5 && angle <= -67.5) {
+				_atkAnim->setFirstPlayedFrame(_attackAnimAngles._a270.x);
+				_atkAnim->setLastPlayedFrame(_attackAnimAngles._a270.y);
+				_idleAnim->setFirstPlayedFrame(_idleAnimAngles._a270.x);
+				_idleAnim->setLastPlayedFrame(_idleAnimAngles._a270.y);
+			}
+			if (angle > -67.5 && angle <= -22.5) {
+				_atkAnim->setFirstPlayedFrame(_attackAnimAngles._a225.x);
+				_atkAnim->setLastPlayedFrame(_attackAnimAngles._a225.y);
+				_idleAnim->setFirstPlayedFrame(_idleAnimAngles._a225.x);
+				_idleAnim->setLastPlayedFrame(_idleAnimAngles._a225.y);
+			}
+
+			if (angle > -22.5 && angle <= 22.5) {
+				_atkAnim->setFirstPlayedFrame(_attackAnimAngles._a180.x);
+				_atkAnim->setLastPlayedFrame(_attackAnimAngles._a180.y);
+				_idleAnim->setFirstPlayedFrame(_idleAnimAngles._a180.x);
+				_idleAnim->setLastPlayedFrame(_idleAnimAngles._a180.y);
+			}
+
+			if (angle > 22.5 && angle <= 67.5) {
+				_atkAnim->setFirstPlayedFrame(_attackAnimAngles._a135.x);
+				_atkAnim->setLastPlayedFrame(_attackAnimAngles._a135.y);
+				_idleAnim->setFirstPlayedFrame(_idleAnimAngles._a135.x);
+				_idleAnim->setLastPlayedFrame(_idleAnimAngles._a135.y);
+			}
+
+			if (angle > 67.5 && angle <= 112.5) {
+				_atkAnim->setFirstPlayedFrame(_attackAnimAngles._a90.x);
+				_atkAnim->setLastPlayedFrame(_attackAnimAngles._a90.y);
+				_idleAnim->setFirstPlayedFrame(_idleAnimAngles._a90.x);
+				_idleAnim->setLastPlayedFrame(_idleAnimAngles._a90.y);
+			}
+
+			if (angle > 112.5 && angle <= 157.5) {
+				_atkAnim->setFirstPlayedFrame(_attackAnimAngles._a45.x);
+				_atkAnim->setLastPlayedFrame(_attackAnimAngles._a45.y);
+				_idleAnim->setFirstPlayedFrame(_idleAnimAngles._a45.x);
+				_idleAnim->setLastPlayedFrame(_idleAnimAngles._a45.y);
+			}
+			if (angle > 157.5 || angle <= -157.5) {
+				_atkAnim->setFirstPlayedFrame(_attackAnimAngles._a0.x);
+				_atkAnim->setLastPlayedFrame(_attackAnimAngles._a0.y);
+				_idleAnim->setFirstPlayedFrame(_idleAnimAngles._a0.x);
+				_idleAnim->setLastPlayedFrame(_idleAnimAngles._a0.y);
+			}
+			_idleAnim->setCurrentFrame(0);
+			_idleAnim->setLoop(true);
+			_idleAnim->setPlayback(true);
+
+			_atkAnim->setPlayback(true);
+
+		}
+	}
+}
+
 /*
 bool TowerParent::Shoot() {
 	if (_reloadTimer == 0 && _target) {
@@ -201,6 +297,14 @@ NormalTower::NormalTower() {
 	_damage = IPoint(0, 0);
 };
 
+NormalTower::NormalTower(NormalTower& proto) {
+	*this = proto;
+	if(proto._idleAnim)
+		this->_idleAnim = proto._idleAnim->Clone();
+	if (proto._atkAnim)
+		this->_atkAnim = proto._atkAnim->Clone();
+};
+
 NormalTower::NormalTower(FPoint position, IPoint cell, float rTime, float rTimer, int range, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
 	_towerType = TowerType::NORMAL;
 	_position = position;
@@ -218,7 +322,7 @@ NormalTower::NormalTower(FPoint position, IPoint cell, float rTime, float rTimer
 
 NormalTower::~NormalTower() {
 };
-
+/*
 void NormalTower::Update(float dt) {
 	if (_reloadTimer > 0)
 		_reloadTimer -= dt;
@@ -239,6 +343,7 @@ void NormalTower::Update(float dt) {
 	}
 
 };
+*/
 
 bool NormalTower::Shoot() {
 	if (_reloadTimer == 0 && _target) {
@@ -259,8 +364,11 @@ void NormalTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 	if (_reloadTimer == 0) {
 		FireParent::Ptr mis = new NormalMissile(_missilesPrototypes[_lvl]);
 		_target = mis->TakeAim(monsters, _target, _range).get();
+		
 		if (_target) {
 
+			UpdateAnimAngle(_target);
+			
 			_missiles.push_back(mis);
 			_reloadTimer = _reloadTime;
 
@@ -306,8 +414,35 @@ void NormalTower::LoadFromXml(std::string filename) {
 				value = tower->first_attribute("lvlCount")->value();
 				_lvlCount = utils::lexical_cast<int>(value);
 
-
+				value = tower->first_attribute("idleAnimation")->value();
+				_idleAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
 				
+				_idleAnimAngles = IDL_ANGLES;
+				/*
+				_idleAnimAngles._a0 = IPoint(0,3);
+				_idleAnimAngles._a45 = IPoint(32,35);
+				_idleAnimAngles._a90 = IPoint(64,67);
+				_idleAnimAngles._a135 = IPoint(96,99);
+				_idleAnimAngles._a180 = IPoint(128,131);
+				_idleAnimAngles._a225 = IPoint(160,163);
+				_idleAnimAngles._a270 = IPoint(192,195);
+				_idleAnimAngles._a315 = IPoint(224,227);
+				*/
+				value = tower->first_attribute("atkAnimation")->value();
+				_atkAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+				_atkAnim->setSpeed(_atkAnim->getSpeed()*_reloadTime);
+
+				_attackAnimAngles = ATK_ANGLES;
+				/*
+				_attackAnimAngles._a0 = IPoint(12, 15);
+				_attackAnimAngles._a45 = IPoint(44, 47);
+				_attackAnimAngles._a90 = IPoint(76, 79);
+				_attackAnimAngles._a135 = IPoint(108, 111);
+				_attackAnimAngles._a180 = IPoint(140, 143);
+				_attackAnimAngles._a225 = IPoint(172, 175);
+				_attackAnimAngles._a270 = IPoint(204, 207);
+				_attackAnimAngles._a315 = IPoint(236, 239);
+				*/
 				for (xml_node<>* missile = tower->first_node("Missile"); missile; missile = missile->next_sibling("Missile")) {
 					string id = missile->first_attribute("id")->value();
 					NormalMissile::NMissInfo info;
@@ -364,6 +499,14 @@ SlowTower::SlowTower() {
 	//_targets = nullptr;
 };
 
+SlowTower::SlowTower(SlowTower& proto) {
+	*this = proto;
+	if (proto._idleAnim)
+		this->_idleAnim = proto._idleAnim->Clone();
+	if (proto._atkAnim)
+		this->_atkAnim = proto._atkAnim->Clone();
+};
+
 SlowTower::SlowTower(FPoint position, IPoint cell, std::vector<MonsterParent::Ptr> & targets, float rTime, float rTimer, int range, int sRange, FPoint sFactor, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
 	_towerType = TowerType::SLOW;
 	_position = position;
@@ -385,7 +528,7 @@ SlowTower::SlowTower(FPoint position, IPoint cell, std::vector<MonsterParent::Pt
 
 
 SlowTower::~SlowTower() {};
-
+/*
 void SlowTower::Update(float dt) {
 	if (_reloadTimer > 0)
 		_reloadTimer -= dt;
@@ -405,7 +548,7 @@ void SlowTower::Update(float dt) {
 
 	}
 };
-
+*/
 bool SlowTower::Shoot() {
 	if (_reloadTimer == 0 && _target) {
 
@@ -426,6 +569,7 @@ void SlowTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 		FireParent::Ptr mis = new SlowMissile(_missilesPrototypes[_lvl], monsters);
 		_target = mis->TakeAim(monsters, _target, _range).get();
 		if (_target) {
+			UpdateAnimAngle(_target);
 			_missiles.push_back(mis);
 			_reloadTimer = _reloadTime;
 
@@ -471,6 +615,36 @@ void SlowTower::LoadFromXml(std::string filename) {
 				_range = utils::lexical_cast<int>(value);
 				value = tower->first_attribute("lvlCount")->value();
 				_lvlCount = utils::lexical_cast<int>(value);
+
+				value = tower->first_attribute("idleAnimation")->value();
+				_idleAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+
+				_idleAnimAngles = IDL_ANGLES;
+				/*
+				_idleAnimAngles._a0 = IPoint(0,3);
+				_idleAnimAngles._a45 = IPoint(32,35);
+				_idleAnimAngles._a90 = IPoint(64,67);
+				_idleAnimAngles._a135 = IPoint(96,99);
+				_idleAnimAngles._a180 = IPoint(128,131);
+				_idleAnimAngles._a225 = IPoint(160,163);
+				_idleAnimAngles._a270 = IPoint(192,195);
+				_idleAnimAngles._a315 = IPoint(224,227);
+				*/
+				value = tower->first_attribute("atkAnimation")->value();
+				_atkAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+				_atkAnim->setSpeed(_atkAnim->getSpeed()*_reloadTime);
+
+				_attackAnimAngles = ATK_ANGLES;
+				/*
+				_attackAnimAngles._a0 = IPoint(12, 15);
+				_attackAnimAngles._a45 = IPoint(44, 47);
+				_attackAnimAngles._a90 = IPoint(76, 79);
+				_attackAnimAngles._a135 = IPoint(108, 111);
+				_attackAnimAngles._a180 = IPoint(140, 143);
+				_attackAnimAngles._a225 = IPoint(172, 175);
+				_attackAnimAngles._a270 = IPoint(204, 207);
+				_attackAnimAngles._a315 = IPoint(236, 239);
+				*/
 				for (xml_node<>* missile = tower->first_node("Missile"); missile; missile = missile->next_sibling("Missile")) {
 					SlowMissile::SlMissInfo info;
 					string id = missile->first_attribute("id")->value();
@@ -574,6 +748,13 @@ DecayTower::DecayTower() {
 	_decay = FPoint(0, 0);
 	_damage = IPoint(0, 0);
 };
+DecayTower::DecayTower(DecayTower& proto) {
+	*this = proto;
+	if (proto._idleAnim)
+		this->_idleAnim = proto._idleAnim->Clone();
+	if (proto._atkAnim)
+		this->_atkAnim = proto._atkAnim->Clone();
+};
 
 DecayTower::DecayTower(FPoint position, IPoint cell, float rTime, float rTimer, int range, FPoint dFactor, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
 	_towerType = TowerType::DECAY;
@@ -592,7 +773,7 @@ DecayTower::DecayTower(FPoint position, IPoint cell, float rTime, float rTimer, 
 };
 
 DecayTower::~DecayTower() {};
-
+/*
 void DecayTower::Update(float dt) {
 	if (_reloadTimer > 0)
 		_reloadTimer -= dt;
@@ -612,7 +793,7 @@ void DecayTower::Update(float dt) {
 
 	}
 };
-
+*/
 bool DecayTower::Shoot() {
 	if (_reloadTimer == 0 && _target) {
 		_missilesPrototypes[_lvl]._position = _position;
@@ -633,6 +814,7 @@ void DecayTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 		FireParent::Ptr mis = new DecayMissile(_missilesPrototypes[_lvl]);
 		_target = mis->TakeAim(monsters, _target, _range).get();
 		if (_target) {
+			UpdateAnimAngle(_target);
 			_missiles.push_back(mis);
 			_reloadTimer = _reloadTime;
 
@@ -678,6 +860,36 @@ void DecayTower::LoadFromXml(std::string filename) {
 				_range = utils::lexical_cast<int>(value);
 				value = tower->first_attribute("lvlCount")->value();
 				_lvlCount = utils::lexical_cast<int>(value);
+
+				value = tower->first_attribute("idleAnimation")->value();
+				_idleAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+
+				_idleAnimAngles = IDL_ANGLES;
+				/*
+				_idleAnimAngles._a0 = IPoint(0,3);
+				_idleAnimAngles._a45 = IPoint(32,35);
+				_idleAnimAngles._a90 = IPoint(64,67);
+				_idleAnimAngles._a135 = IPoint(96,99);
+				_idleAnimAngles._a180 = IPoint(128,131);
+				_idleAnimAngles._a225 = IPoint(160,163);
+				_idleAnimAngles._a270 = IPoint(192,195);
+				_idleAnimAngles._a315 = IPoint(224,227);
+				*/
+				value = tower->first_attribute("atkAnimation")->value();
+				_atkAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+				_atkAnim->setSpeed(_atkAnim->getSpeed()*_reloadTime);
+
+				_attackAnimAngles = ATK_ANGLES;
+				/*
+				_attackAnimAngles._a0 = IPoint(12, 15);
+				_attackAnimAngles._a45 = IPoint(44, 47);
+				_attackAnimAngles._a90 = IPoint(76, 79);
+				_attackAnimAngles._a135 = IPoint(108, 111);
+				_attackAnimAngles._a180 = IPoint(140, 143);
+				_attackAnimAngles._a225 = IPoint(172, 175);
+				_attackAnimAngles._a270 = IPoint(204, 207);
+				_attackAnimAngles._a315 = IPoint(236, 239);
+				*/
 				for (xml_node<>* missile = tower->first_node("Missile"); missile; missile = missile->next_sibling("Missile")) {
 					DecayMissile::DMissInfo info;
 					info._target = nullptr;
@@ -737,6 +949,14 @@ BashTower::BashTower() {
 	_damage = IPoint(0, 0);
 };
 
+BashTower::BashTower(BashTower& proto) {
+	*this = proto;
+	if (proto._idleAnim)
+		this->_idleAnim = proto._idleAnim->Clone();
+	if (proto._atkAnim)
+		this->_atkAnim = proto._atkAnim->Clone();
+};
+
 BashTower::BashTower(FPoint position, IPoint cell, float rTime, float rTimer, int range, FPoint bash, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
 	_towerType = TowerType::BASH;
 	_position = position;
@@ -753,7 +973,7 @@ BashTower::BashTower(FPoint position, IPoint cell, float rTime, float rTimer, in
 };
 
 BashTower::~BashTower() {};
-
+/*
 void BashTower::Update(float dt) {
 	if (_reloadTimer > 0)
 		_reloadTimer -= dt;
@@ -773,7 +993,7 @@ void BashTower::Update(float dt) {
 
 	}
 };
-
+*/
 bool BashTower::Shoot() {
 	if (_reloadTimer == 0 && _target) {
 		_missilesPrototypes[_lvl]._position = _position;
@@ -794,6 +1014,7 @@ void BashTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 		FireParent::Ptr mis = new BashMissile(_missilesPrototypes[_lvl]);
 		_target = mis->TakeAim(monsters, _target, _range).get();
 		if (_target) {
+			UpdateAnimAngle(_target);
 			_missiles.push_back(mis);
 			_reloadTimer = _reloadTime;
 
@@ -839,6 +1060,36 @@ void BashTower::LoadFromXml(std::string filename) {
 				_range = utils::lexical_cast<int>(value);
 				value = tower->first_attribute("lvlCount")->value();
 				_lvlCount = utils::lexical_cast<int>(value);
+
+				value = tower->first_attribute("idleAnimation")->value();
+				_idleAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+
+				_idleAnimAngles = IDL_ANGLES;
+				/*
+				_idleAnimAngles._a0 = IPoint(0,3);
+				_idleAnimAngles._a45 = IPoint(32,35);
+				_idleAnimAngles._a90 = IPoint(64,67);
+				_idleAnimAngles._a135 = IPoint(96,99);
+				_idleAnimAngles._a180 = IPoint(128,131);
+				_idleAnimAngles._a225 = IPoint(160,163);
+				_idleAnimAngles._a270 = IPoint(192,195);
+				_idleAnimAngles._a315 = IPoint(224,227);
+				*/
+				value = tower->first_attribute("atkAnimation")->value();
+				_atkAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+				_atkAnim->setSpeed(_atkAnim->getSpeed()*_reloadTime);
+
+				_attackAnimAngles = ATK_ANGLES;
+				/*
+				_attackAnimAngles._a0 = IPoint(12, 15);
+				_attackAnimAngles._a45 = IPoint(44, 47);
+				_attackAnimAngles._a90 = IPoint(76, 79);
+				_attackAnimAngles._a135 = IPoint(108, 111);
+				_attackAnimAngles._a180 = IPoint(140, 143);
+				_attackAnimAngles._a225 = IPoint(172, 175);
+				_attackAnimAngles._a270 = IPoint(204, 207);
+				_attackAnimAngles._a315 = IPoint(236, 239);
+				*/
 				for (xml_node<>* missile = tower->first_node("Missile"); missile; missile = missile->next_sibling("Missile")) {
 					BashMissile::BMissInfo info;
 					info._target = nullptr;
@@ -901,6 +1152,14 @@ SplashTower::SplashTower() {
 	
 };
 
+SplashTower::SplashTower(SplashTower& proto) {
+	*this = proto;
+	if (proto._idleAnim)
+		this->_idleAnim = proto._idleAnim->Clone();
+	if (proto._atkAnim)
+		this->_atkAnim = proto._atkAnim->Clone();
+};
+
 SplashTower::SplashTower(FPoint position, IPoint cell, std::vector<MonsterParent::Ptr> & targets, float rTime, float rTimer, int range, int sRange, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
 	_towerType = TowerType::SPLASH;
 	_position = position;
@@ -918,7 +1177,7 @@ SplashTower::SplashTower(FPoint position, IPoint cell, std::vector<MonsterParent
 };
 
 SplashTower::~SplashTower() {};
-
+/*
 void SplashTower::Update(float dt) {
 	if (_reloadTimer > 0)
 		_reloadTimer -= dt;
@@ -938,7 +1197,7 @@ void SplashTower::Update(float dt) {
 
 	}
 };
-
+*/
 bool SplashTower::Shoot() {
 	if (_reloadTimer == 0 && _target) {
 		_missilesPrototypes[_lvl]._position = _position;
@@ -958,6 +1217,7 @@ void SplashTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 		FireParent::Ptr mis = new SplashMissile(_missilesPrototypes[_lvl],monsters);
 		_target = mis->TakeAim(monsters, _target, _range).get();
 		if (_target) {
+			UpdateAnimAngle(_target);
 			_missiles.push_back(mis);
 			_reloadTimer = _reloadTime;
 
@@ -1046,6 +1306,36 @@ void SplashTower::LoadFromXml(std::string filename) {
 				_range = utils::lexical_cast<int>(value);
 				value = tower->first_attribute("lvlCount")->value();
 				_lvlCount = utils::lexical_cast<int>(value);
+
+				value = tower->first_attribute("idleAnimation")->value();
+				_idleAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+
+				_idleAnimAngles = IDL_ANGLES;
+				/*
+				_idleAnimAngles._a0 = IPoint(0,3);
+				_idleAnimAngles._a45 = IPoint(32,35);
+				_idleAnimAngles._a90 = IPoint(64,67);
+				_idleAnimAngles._a135 = IPoint(96,99);
+				_idleAnimAngles._a180 = IPoint(128,131);
+				_idleAnimAngles._a225 = IPoint(160,163);
+				_idleAnimAngles._a270 = IPoint(192,195);
+				_idleAnimAngles._a315 = IPoint(224,227);
+				*/
+				value = tower->first_attribute("atkAnimation")->value();
+				_atkAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+				_atkAnim->setSpeed(_atkAnim->getSpeed()*_reloadTime);
+
+				_attackAnimAngles = ATK_ANGLES;
+				/*
+				_attackAnimAngles._a0 = IPoint(12, 15);
+				_attackAnimAngles._a45 = IPoint(44, 47);
+				_attackAnimAngles._a90 = IPoint(76, 79);
+				_attackAnimAngles._a135 = IPoint(108, 111);
+				_attackAnimAngles._a180 = IPoint(140, 143);
+				_attackAnimAngles._a225 = IPoint(172, 175);
+				_attackAnimAngles._a270 = IPoint(204, 207);
+				_attackAnimAngles._a315 = IPoint(236, 239);
+				*/
 				for (xml_node<>* missile = tower->first_node("Missile"); missile; missile = missile->next_sibling("Missile")) {
 					SplashMissile::SpMissInfo info;
 					string id = missile->first_attribute("id")->value();

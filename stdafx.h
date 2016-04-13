@@ -13,3 +13,14 @@ enum TowerType {
 	DECAY,
 	BASH
 };
+
+typedef struct {
+	IPoint _a0;
+	IPoint _a45;
+	IPoint _a90;
+	IPoint _a135;
+	IPoint _a180;
+	IPoint _a225;
+	IPoint _a270;
+	IPoint _a315;
+}AnimAngles;

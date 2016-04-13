@@ -42,11 +42,12 @@ void TestWidget::Init()
 	_towerPs.push_back(_towerFactory.createSlow());
 	_towerPs.push_back(_towerFactory.createDecay());
 	_towerPs.push_back(_towerFactory.createBash());
-
+    //anim = Core::resourceManager.Get<Render::Animation>("FireAntAttackAnimation");
 }
 
 void TestWidget::Draw()
 {
+	
 	IPoint fieldSize = _fieldMap.Size();
 	IPoint cellSize = _fieldMap.CellSize();
 
@@ -85,12 +86,14 @@ void TestWidget::Draw()
 	//Render::device.PopMatrix();
 	
 	World::Instance().Draw();
-
+	//anim->Draw(IPoint(0, 0));
 
 }
 
 void TestWidget::Update(float dt)
 {	
+
+	//anim->Update(dt*0.5);
 	if (World::Instance().State() == LOSE || World::Instance().State() == WIN)
 		dt *= 0;
 	//dt *= 0.5;

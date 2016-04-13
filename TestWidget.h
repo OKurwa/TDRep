@@ -43,7 +43,7 @@ private:
 
 	EffectsContainer _effCont;
 	ParticleEffectPtr _eff;
-
+	Render::Animation* anim; 
 	
 	
 
