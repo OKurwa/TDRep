@@ -35,6 +35,16 @@ void TestWidget::Init()
 		}
 	}
 	_texButtons = Core::resourceManager.Get<Render::Texture>("Towers");
+	_buildCursor = Core::resourceManager.Get<Render::Texture>("Ghost");
+	_menuBG = Core::resourceManager.Get<Render::Texture>("MenuBG");
+
+
+	Menu::MenuInfo info;
+	info._rect = IRect(768 +  (1024 - 768 - 128) / 2,44,128,192);
+	info._buttonSize = IPoint(64,64);
+	info._size = IPoint(2, 3);
+	info._buttonsTex = Core::resourceManager.Get<Render::Texture>("Towers");
+	_tryMenu = new Menu(info);
 	//TowerParent * t = new TowerParent(FPoint(32, 32), 0, 0, 0, 0, 0, nullptr);
 	//_towers.push_back(t);
 	_towerPs.push_back(_towerFactory.createNormal());
@@ -43,6 +53,8 @@ void TestWidget::Init()
 	_towerPs.push_back(_towerFactory.createDecay());
 	_towerPs.push_back(_towerFactory.createBash());
     //anim = Core::resourceManager.Get<Render::Animation>("FireAntAttackAnimation");
+	_enableBuildCursor = false;
+	_curTowerType = EMPTY;
 }
 
 void TestWidget::Draw()
@@ -50,30 +62,9 @@ void TestWidget::Draw()
 	
 	IPoint fieldSize = _fieldMap.Size();
 	IPoint cellSize = _fieldMap.CellSize();
+	_menuBG->Draw(IPoint(768,0));
+	_tryMenu->Draw();
 
-	IRect bRect = IRect(960, 256, 64, 64);
-	FRect uvRect = FRect(0, 0.2, 0, 1.0);
-	_texButtons->Draw(bRect, uvRect);
-	bRect = IRect(960, 192, 64, 64);
-	uvRect = FRect(0.2, 0.4, 0, 1.0);
-	_texButtons->Draw(bRect, uvRect);
-	bRect = IRect(960, 128, 64, 64);
-	uvRect = FRect(0.4, 0.6, 0, 1.0);
-	_texButtons->Draw(bRect, uvRect);
-	bRect = IRect(960, 64, 64, 64);
-	uvRect = FRect(0.6, 0.8, 0, 1.0);
-	_texButtons->Draw(bRect, uvRect);
-	bRect = IRect(960, 0, 64, 64);
-	uvRect = FRect(0.8, 1.0, 0, 1.0);
-	_texButtons->Draw(bRect, uvRect);
-	
-	
-	//Render::device.PushMatrix();
-	
-	//Render::device.MatrixTranslate(512, 384, 0);
-	//Render::device.MatrixScale(1, 0.5, 1);
-	//Render::device.MatrixRotate(math::Vector3(0, 0, 1), 45);
-	//Render::device.MatrixTranslate(-fieldSize.x * cellSize.x / 2, -fieldSize.y*cellSize.y / 2, 0);
 	Render::device.SetTexturing(false);
 	_fieldMap.Draw();
 	for (unsigned int i = 0; i < _monsters.size();i++) {
@@ -83,6 +74,14 @@ void TestWidget::Draw()
 		_towers[i]->Draw();
 	}
 	Render::device.SetTexturing(true);
+	if (_curTowerType != EMPTY && _curTowerType != DESTROY && _enableBuildCursor) {
+		Render::BeginAlphaMul(0.5);
+		_buildCursor->Draw(IPoint(_buildCursorPos.x - 32, _buildCursorPos.y - 32));
+		Render::EndAlphaMul();
+	}
+
+		
+	
 	//Render::device.PopMatrix();
 	
 	World::Instance().Draw();
@@ -126,39 +125,6 @@ void TestWidget::Update(float dt)
 				m = _monsterAttack.GetAttackPrototypes()[_curMonsterAttack]->clone();
 				m->SetPosition(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), &_fieldMap);
 				
-				/*
-				
-				if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Normal") {
-					//Обычный монстр
-					m = new NormalMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr);
-				}
-				else if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Boss") {
-					//Босс
-					m = new BossMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, 0.5, nullptr);
-				}
-				else if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Healing") {
-					//Регенерирующий монстр
-					m = new HealingMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr, 5);
-				}
-				else if (_monsterAttack.GetAttack()[_curMonsterAttack].Type() == "Immune") {
-					//Иммунный монстр
-					m = new ImmuneMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr);
-				}
-				else {
-					//Обычный монстр
-					m = new NormalMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), spd, hp, &_fieldMap, nullptr);
-				}
-				*/
-
-				//Регенерирующий монстр
-				//boost::intrusive_ptr<MonsterParent> m = new HealingMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), 64, 200, &_fieldMap, nullptr, 5);
-
-				//Иммунный монстр
-				//boost::intrusive_ptr<MonsterParent> m = new ImmuneMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), 64, 200, &_fieldMap, nullptr);
-
-				//Босс
-				//boost::intrusive_ptr<MonsterParent> m = new BossMonster(FPoint(_spawn.x * _fieldMap.CellSize().x + 32 + math::random(-31, 31), _spawn.y * _fieldMap.CellSize().y + 32 + math::random(-31, 31)), 64, 600, &_fieldMap, 0.5, nullptr);
-
 				++_curMonsterCount;
 				_monsters.push_back(m);
 
@@ -186,7 +152,7 @@ void TestWidget::Update(float dt)
 				endWave = false;
 		}
 		//Очистка старой и начало новой
-		if (endWave && _curMonsterCount>0) {
+		if (endWave && _curMonsterCount>0 && _monsters.size() == 0) {
 			_monsters.clear();
 			_curMonsterCount = 0;
 			if(_curMonsterAttack+1<_monsterAttack.GetAttack().size())
@@ -231,46 +197,79 @@ bool TestWidget::MouseDown(const IPoint &mouse_pos)
 	////////////////////////////////////////
 	//			 Создание башни           //
 	////////////////////////////////////////
+	
+	_curTowerType = _tryMenu->Press(mouse_pos, _curTowerType);
+	if(World::Instance().State()==DELAY || World::Instance().State() == WAVE)
+		_fieldMap.ShowGhosts(_curTowerType);
 
-
-	if (Core::mainInput.GetMouseLeftButton()) {
-		if (_fieldMap.AddTower(pos1)) {
-			
-			TowerParent::Ptr t;
-			switch (_curTowerType)
-			{
-			case NORMAL:
-				t = _towerFactory.createNormal();
-				break;
-			case SPLASH:
-				t = _towerFactory.createSplash();
-				break;
-			case SLOW:
-				t = _towerFactory.createSlow();
-				break;
-			case DECAY:
-				t = _towerFactory.createDecay();
-				break;
-			case BASH:
-				t = _towerFactory.createBash();
-				break;
-			default:
-				t = _towerFactory.createNormal();
-				break;
-			}
-
-			if (World::Instance().GoldSpend(t->Price())) {
-				t->SetCell(pos1);
-				t->SetPosition(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2));
-				_towers.push_back(t);
-			}
-			else{
-				bool b=_fieldMap.DestroyTower(pos1);
-			}
-     			
-		};
-		
+	if (_curTowerType != EMPTY && _curTowerType != DESTROY) {
+		_enableBuildCursor = true;
 	}
+	else {
+		_enableBuildCursor = false;
+	}
+
+	if (World::Instance().State() != WIN && World::Instance().State() != LOSE) {
+		if (Core::mainInput.GetMouseLeftButton()) {
+			if (_fieldMap.AddTower(pos1)) {
+
+				TowerParent::Ptr t;
+				switch (_curTowerType)
+				{
+				case NORMAL:
+					t = _towerFactory.createNormal();
+					break;
+				case SPLASH:
+					t = _towerFactory.createSplash();
+					break;
+				case SLOW:
+					t = _towerFactory.createSlow();
+					break;
+				case DECAY:
+					t = _towerFactory.createDecay();
+					break;
+				case BASH:
+					t = _towerFactory.createBash();
+					break;
+				}
+				if (t) {
+					if (World::Instance().GoldSpend(t->Price())) {
+						t->SetCell(pos1);
+						t->SetPosition(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2));
+						_towers.push_back(t);
+					}
+					else {
+						bool b = _fieldMap.DestroyTower(pos1);
+					}
+				}
+				else {
+					bool b = _fieldMap.DestroyTower(pos1);
+				}
+
+
+			};
+			if (_curTowerType == DESTROY) {
+				if (_fieldMap.DestroyTower(pos1)) {
+					int destrIndex = 0;
+					bool found = false;
+					for (int i = 0; i < _towers.size(); i++) {
+						if (_towers[i]->Cell() == pos1) {
+							found = true;
+							destrIndex = i;
+						}
+					}
+					if (found) {
+						World::Instance().GoldAdd(_towers[destrIndex]->Price()*0.75);
+						_towers.erase(_towers.begin() + destrIndex);
+					}
+				};
+			}
+
+
+
+		}
+	}
+	
 
 	////////////////////////////////////////
 	//			 Удаление башни           //
@@ -287,6 +286,7 @@ bool TestWidget::MouseDown(const IPoint &mouse_pos)
 				}
 			}
 			if (found) {
+				World::Instance().GoldAdd(_towers[destrIndex]->Price()*0.75);
 				_towers.erase(_towers.begin() + destrIndex);
 			}
 		};
@@ -300,7 +300,8 @@ bool TestWidget::MouseDown(const IPoint &mouse_pos)
 
 void TestWidget::MouseMove(const IPoint &mouse_pos)
 {
-	
+	_tryMenu->SetLighter(mouse_pos);
+	_buildCursorPos = mouse_pos;
 }
 
 void TestWidget::MouseUp(const IPoint &mouse_pos)
@@ -354,7 +355,7 @@ void TestWidget::AcceptMessage(const Message& message)
 		{
 			_curTowerType = BASH;
 		}
-		if (code == 's') {
+		if (code == 's'|| code == 'S') {
 			_fieldMap.Reset();
 			_towers.clear();
 			_monsters.clear();
@@ -363,9 +364,9 @@ void TestWidget::AcceptMessage(const Message& message)
 			_spawnTimer = 0;
 			_spawnTime = 0.4;
 			_curMonsterAttack = 0;
-			_curTowerType = NORMAL;
+			_curTowerType = EMPTY;
 			_curMonsterCount = 0;
-
+			_tryMenu->Reset();
 			//for (int i = 0; i < _monsterAttack.GetAttack()[0].Count(); i++) {
 			//	_monsters[i]->FindAWay();
 			//}

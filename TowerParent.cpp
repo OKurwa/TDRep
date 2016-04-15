@@ -42,7 +42,9 @@ TowerParent::~TowerParent() {
 };
 
 void TowerParent::Draw() {
-
+	for (int i = 0; i < _missiles.size(); i++) {
+		_missiles[i]->Draw();
+	}
 	if (_idleAnim && _atkAnim) {
 		if (_atkAnim->IsFinished()) {
 			Render::device.SetTexturing(true);
@@ -82,9 +84,7 @@ void TowerParent::Draw() {
 		//Render::device.SetTexturing(true);
 
 	}
-	for (int i = 0; i < _missiles.size(); i++) {
-		_missiles[i]->Draw();
-	}
+	
 };
 
 void TowerParent::Update(float dt) {

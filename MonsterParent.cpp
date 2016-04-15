@@ -92,8 +92,9 @@ void MonsterParent::Draw() {
 
 		if (_idleAnim && _runAnim && _dieAnim) {
 			IPoint pos = IPoint(_position.x - 32, _position.y - 20);
+
 			if (_idleAnim && _runAnim && _dieAnim) {
-				
+				Render::device.SetTexturing(true);
 				Render::device.PushMatrix();
 				//Render::device.MatrixTranslate(pos);
 				Render::device.MatrixScale(0.5, 0.5, 1);
@@ -112,7 +113,20 @@ void MonsterParent::Draw() {
 				else {
 					_dieAnim->Draw();
 				}
+				
 				Render::device.PopMatrix();
+				
+				Render::device.SetTexturing(false);
+				int width = 30 * _hp / _maxHp;
+				if (width < 0)
+					width = 0;
+				IRect cRect = IRect(_position.x - 15, _position.y - 15, width, 5);
+				//Render::device.SetTexturing(false);
+				Render::BindFont("arial");
+
+				Render::BeginColor(Color(255 - 255*_hp / _maxHp, 255* _hp / _maxHp, 0, 255));
+				Render::DrawRect(cRect);
+				Render::EndColor();
 				
 				
 			}
@@ -272,7 +286,7 @@ void MonsterParent::UpdateAnimAngle(float dt) {
 					_dieAnim->setFirstPlayedFrame(_dieAnimAngles._a270.x);
 					_dieAnim->setLastPlayedFrame(_dieAnimAngles._a270.y);
 					_dieAnim->setCurrentFrame(0);
-					//_dieAnim->setPlayback(true);
+					
 
 					_runAnim->setLoop(true);
 					_runAnim->setPlayback(true);
@@ -727,6 +741,7 @@ NormalMonster::NormalMonster(NormMInfo inf) {
 	_idleAnim = inf._idleAnim;
 	_dieAnim = inf._dieAnim;
 	_dying = false;
+	_lastAngle = 20;
 	
 };
 NormalMonster::~NormalMonster() {
@@ -775,6 +790,7 @@ BossMonster::BossMonster() {
 	_reduceDamage = 0;
 	_finish = false;
 	_dying = false;
+	_lastAngle = 20;
 };
 
 BossMonster::BossMonster(BossMonster& proto) {
@@ -808,6 +824,7 @@ BossMonster::BossMonster(BossMInfo inf) {
 	_idleAnim = inf._idleAnim;
 	_dieAnim = inf._dieAnim;
 	_dying = false;
+	_lastAngle = 20;
 };
 BossMonster::~BossMonster() {
 };
@@ -889,6 +906,7 @@ ImmuneMonster::ImmuneMonster(ImmMInfo inf) {
 	_idleAnim = inf._idleAnim;
 	_dieAnim = inf._dieAnim;
 	_dying = false;
+	_lastAngle = 20;
 };
 ImmuneMonster::~ImmuneMonster() {
 };
@@ -968,6 +986,7 @@ HealingMonster::HealingMonster(HealMInfo inf) {
 	_idleAnim = inf._idleAnim;
 	_dieAnim = inf._dieAnim;
 	_dying = false;
+	_lastAngle = 20;
 };
 HealingMonster::~HealingMonster() {
 };

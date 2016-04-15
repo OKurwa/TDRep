@@ -6,6 +6,7 @@
 #include "TowerParent.h"
 #include "MonsterParent.h"
 #include "World.h"
+#include "Menu.h"
 ///
 /// Виджет - основной визуальный элемент на экране.
 /// Он отрисовывает себя, а также может содержать другие виджеты.
@@ -38,7 +39,13 @@ private:
 	
 	Render::Texture* _tex1;
 	Render::Texture* _tex2;
-	Render::Texture* _texButtons;
+	Render::TexturePtr _menuBG;
+	Render::TexturePtr _texButtons;
+	Render::TexturePtr _destroyCursor;
+	bool _enableBuildCursor;
+	Render::TexturePtr _buildCursor;
+
+	IPoint _buildCursorPos;
 	int _curTex;
 
 	EffectsContainer _effCont;
@@ -46,6 +53,7 @@ private:
 	Render::Animation* anim; 
 	
 	
+
 
 	IPoint _spawn;
 	float _spawnTimer;
@@ -59,7 +67,10 @@ private:
 	FieldMap _fieldMap;
 	MonsterAttack _monsterAttack;
 	TowerType _curTowerType;
+	
 
+
+	Menu::Ptr _tryMenu;
 /*Фейерверк*/
 /*
 	Render::Texture* _back;

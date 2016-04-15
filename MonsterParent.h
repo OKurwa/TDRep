@@ -52,7 +52,10 @@ protected:
 	float _moveTimer;
 	float _curWayDistance;
 	std::vector<IPoint> _currentWay;
-	Render::TexturePtr _skin;
+	Render::TexturePtr _skin; 
+	
+	//EffectsContainer _boomCont;
+	//ParticleEffectPtr _boomEff;
 	TimedSplinePath _curWaySplineX;
 	TimedSplinePath _curWaySplineY;
 

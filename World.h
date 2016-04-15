@@ -56,6 +56,9 @@ private:
 	int _monstersRemaining;
 	int _lives;
 	int _curAttackIndex;
+	int _maxHP;
+	int _speed;
+	int _gpm;
 	std::string _curAttackName;
 	std::string _nextAttackName;
 	std::string _curAttackType;

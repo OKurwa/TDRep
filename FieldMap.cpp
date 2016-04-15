@@ -11,7 +11,7 @@ FieldCell::FieldCell() : ref_cnt_(0)
 	_selected = false;
 	_size = IPoint(0,0);
 	_position = FPoint(0,0);
-	
+	_showGhost = false;
 }
 
 FieldCell::~FieldCell()
@@ -36,12 +36,16 @@ FieldCell& FieldCell::operator = (const FieldCell& cell) {
 
 void FieldCell::Init(CellType cell, IPoint size, FPoint position) {
 	_cellType = cell;
+	/*
 	if (cell == SLOT) {
 		_tex = Core::resourceManager.Get<Render::Texture>("Slot");
 	}
 	else {
 		_tex = nullptr;
 	}
+	*/
+	_tex = Core::resourceManager.Get<Render::Texture>("Land");
+	_ghost = Core::resourceManager.Get<Render::Texture>("Ghost");
 	_size = size;
 	_position = position;
 	_selected = false;
@@ -52,9 +56,9 @@ void FieldCell::Init(CellType cell, IPoint size, FPoint position) {
 
 
 void	FieldCell::Draw(Render::Texture* _ground, FRect cTexRect) {
-	if (_ground) {
-		IRect cRect = IRect(_position.x * _size.x-2, _position.y * _size.y - 2, _size.x + 2, _size.y+2);
-		
+	if (_tex) {
+		IRect cRect = IRect(_position.x * _size.x, _position.y * _size.y, _size.x, _size.y);
+		FRect tmp = FRect(0, 1, 0, 1);
 
 
 
@@ -64,11 +68,16 @@ void	FieldCell::Draw(Render::Texture* _ground, FRect cTexRect) {
 		
 		
 		
-		//_ground->SetAddressMode(AddressMode::Repeat);
+		_tex->SetAddressMode(AddressMode::Clamp);
 
-
-		_ground->Draw(cRect, cTexRect);
-		
+		Render::device.SetTexturing(true);
+		_tex->Draw(cRect, cTexRect);
+		if (_ghost && _cellType == SLOT && _empty && _showGhost) {
+			Render::BeginAlphaMul(0.5);
+			_ghost->Draw(cRect, tmp);
+			Render::EndAlphaMul();
+		}
+		Render::device.SetTexturing(false);
 		
 		
 		/*Подгонка под квадрат.
@@ -104,6 +113,9 @@ void FieldCell::Draw() {
 		
 		Render::device.SetTexturing(true);
 		_tex->Draw(r, tmp);
+		if (_ghost && _cellType == SLOT && _empty && _showGhost) {
+			_ghost->Draw(r, tmp);
+		}
 		Render::device.SetTexturing(false);
 	}
 	else {
@@ -220,6 +232,7 @@ void FieldCell::SetType(CellType cell) {
 	_cellType = cell;
 	if (cell == SLOT) {
 		_tex = Core::resourceManager.Get<Render::Texture>("Slot");
+		
 	}
 	else {
 		_tex = nullptr;
@@ -254,7 +267,14 @@ bool FieldCell::DestroyTower() {
 	}
 };
 
-
+void FieldCell::ShowGhosts(bool sG) {
+	if (sG) {
+		_showGhost = true;
+	}
+	else {
+		_showGhost = false;
+	}
+};
 
 
 
@@ -264,6 +284,7 @@ FieldMap::FieldMap() {
 	_size = IPoint(0,0);
 	_cellSize = IPoint(0, 0);
 	_ground = nullptr;
+	_showGhosts = false;
 };
 FieldMap::~FieldMap() {
 	for (unsigned int i = 0; i < _cells.size(); i++) {
@@ -337,34 +358,35 @@ void FieldMap::Draw() {
 			switch (_cells[row][col]->Type())
 				{
 				case PASS:
-					cTexRect = FRect((1.0 / 8.0), (2.0 / 8.0), 0.0, (1.0 / 3.0));
+					cTexRect = FRect((1.0 / 8.0), (2.0 / 8.0), (1.0 / 3.0), (2.0 / 3.0));
 					break;
 				case SLOT:
-					cTexRect = FRect(0.0, (1.0 / 8.0), 0.0, (1.0 / 3.0));
+					//cTexRect = FRect((0.0 / 8.0), (1.0 / 8.0), (1.0 / 3.0), (2.0 / 3.0));
+					cTexRect = FRect((4.0 / 8.0), (5.0 / 8.0), (2.0 / 3.0), (3.0 / 3.0));
 					break;
 				case GRASS:
-					cTexRect = FRect((7.0 / 8.0), (8.0 / 8.0), 0.0, (1.0 / 3.0));
+					cTexRect = FRect((4.0 / 8.0), (5.0 / 8.0), (2.0 / 3.0), (3.0 / 3.0));
 					break;
 				case BORDER_0:
 					cTexRect = FRect((4.0 / 8.0), (5.0 / 8.0), (1.0 / 3.0), (2.0 / 3.0));
 					break;
 				case BORDER_90:
-					cTexRect = FRect((6.0 / 8.0), (7.0 / 8.0), (1.0 / 3.0), (2.0 / 3.0));
+					cTexRect = FRect((3.0 / 8.0), (4.0 / 8.0), (0.0 / 3.0), (1.0 / 3.0));
 					break;
 				case BORDER_180:
-					cTexRect = FRect((7.0 / 8.0), (8.0 / 8.0), (1.0 / 3.0), (2.0 / 3.0));
+					cTexRect = FRect((0.0 / 8.0), (1.0 / 8.0), (2.0 / 3.0), (3.0 / 3.0));
 					break;
 				case BORDER_270:
-					cTexRect = FRect((5.0 / 8.0), (6.0 / 8.0), (1.0 / 3.0), (2.0 / 3.0));
+					cTexRect = FRect((5.0 / 8.0), (6.0 / 8.0), (0.0 / 3.0), (1.0 / 3.0));
 					break;
 				case CORNER_IN_0:
 					cTexRect = FRect((2.0 / 8.0), (3.0 / 8.0), 0.0, (1.0 / 3.0));
 					break;
 				case CORNER_IN_90:
-					cTexRect = FRect((3.0 / 8.0), (4.0 / 8.0), 0.0, (1.0 / 3.0));
+					cTexRect = FRect((3.0 / 8.0), (4.0 / 8.0), (2.0 / 3.0), (3.0 / 3.0));
 					break;
 				case CORNER_IN_180:
-					cTexRect = FRect((4.0 / 8.0), (5.0 / 8.0), 0.0, (1.0 / 3.0));
+					cTexRect = FRect((3.0 / 8.0), (4.0 / 8.0), (1.0 / 3.0), (2.0 / 3.0));
 					break;
 				case CORNER_IN_270:
 					cTexRect = FRect((5.0 / 8.0), (6.0 / 8.0), 0.0, (1.0 / 3.0));
@@ -373,20 +395,27 @@ void FieldMap::Draw() {
 					cTexRect = FRect((4.0 / 8.0), (5.0 / 8.0), (2.0 / 3.0), (3.0 / 3.0));
 					break;
 				case CORNER_OUT_90:
-					cTexRect = FRect((5.0 / 8.0), (6.0 / 8.0), (2.0 / 3.0), (3.0 / 3.0));
+					cTexRect = FRect((6.0 / 8.0), (7.0 / 8.0), (2.0 / 3.0), (3.0 / 3.0));
 					break;
 				case CORNER_OUT_180:
-					cTexRect = FRect((6.0 / 8.0), (7.0 / 8.0), (2.0 / 3.0), (3.0 / 3.0));
+					
+					cTexRect = FRect((6.0 / 8.0), (7.0 / 8.0), (1.0 / 3.0), (2.0 / 3.0));
 					break;
 				case CORNER_OUT_270:
 					cTexRect = FRect((7.0 / 8.0), (8.0 / 8.0), (2.0 / 3.0), (3.0 / 3.0));
+					break;
+				case LAIR:
+					cTexRect = FRect((1.0 / 8.0), (2.0 / 8.0), (1.0 / 3.0), (2.0 / 3.0));
+					break;
+				case SPAWN:
+					cTexRect = FRect((1.0 / 8.0), (2.0 / 8.0), (1.0 / 3.0), (2.0 / 3.0));
 					break;
 				default:
 					cTexRect = FRect((7.0 / 8.0), (8.0 / 8.0), 0.0, (1.0 / 3.0));
 					break;
 			}
-			//_cells[row][col]->Draw(_ground, tmp);
-			_cells[row][col]->Draw();
+			_cells[row][col]->Draw(nullptr, cTexRect);
+			//_cells[row][col]->Draw();
 		}
 	}
 	//Render::device.SetTexturing(true);
@@ -394,9 +423,12 @@ void FieldMap::Draw() {
 void FieldMap::Update(float dt) {
 	for (unsigned int row = 0; row < _cells.size(); row++) {
 		for (unsigned int col = 0; col < _cells[row].size(); col++) {
+			_cells[row][col]->ShowGhosts(_showGhosts);
 			_cells[row][col]->Update(dt);
+
 		}
 	}
+
 };
 
 bool FieldMap::AddTower(IPoint cell) {
@@ -468,6 +500,15 @@ CellType FieldMap::SelectCell(FPoint pos) {
 		return NONE;
 	}
 	
+};
+
+void FieldMap::ShowGhosts(TowerType t) {
+	if (t != EMPTY ) {
+		_showGhosts = true;
+	}
+	else {
+		_showGhosts = false;
+	}
 };
 
 

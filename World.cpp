@@ -86,22 +86,50 @@ void World::SetNewAttack(float delay, Attack & atk) {
 		if(_lives > 0)
 			_state = WIN;
 	}
+	
+	_curAttackName = atk.Name();
+	_curAttackType = atk.Type();
+	_maxHP = atk.MaxHp();
+	_speed = atk.Speed();
+	_gpm = atk.MGold();
 		
 };
 
 void World::Draw() {
-	Render::BindFont("arial");
-	Render::device.SetTexturing(true);
 
-	Render::BeginColor(Color(255, 255, 255, 255));
-	Render::PrintString(FPoint(1024, 550), "GOLD :" + utils::lexical_cast(_gold), 1.00f,RightAlign,BottomAlign);
-	Render::PrintString(FPoint(1024, 530), "WAVES REM :" + utils::lexical_cast(_attacksRemaining), 1.00f, RightAlign, BottomAlign);
-	Render::PrintString(FPoint(1024, 510), "state :" + utils::lexical_cast(_state), 1.00f, RightAlign, BottomAlign);
-	Render::PrintString(FPoint(1024, 490), "time:" + utils::lexical_cast(_delayTimer), 1.00f, RightAlign, BottomAlign);
-	Render::PrintString(FPoint(1024, 470), "HP :" + utils::lexical_cast(_lives), 1.00f, RightAlign, BottomAlign);
-	Render::PrintString(FPoint(1024, 450), "CUR ATK :" + utils::lexical_cast(_curAttackIndex), 1.00f, RightAlign, BottomAlign);
-	Render::EndColor();
-	Render::device.SetTexturing(false);
+	if (_state == LOSE) {
+		Render::device.SetTexturing(false);
+		Render::BeginAlphaMul(0.5);
+		Render::BeginColor(Color(0, 0, 0, 255));
+		Render::DrawRect(0,0,1024,768);
+		Render::EndColor();
+		Render::EndAlphaMul();
+		Render::device.SetTexturing(true);
+		
+	}
+	else {
+		Render::BindFont("arial");
+		Render::device.SetTexturing(true);
+
+		Render::BeginColor(Color(255, 255, 255, 255));
+		Render::PrintString(FPoint(838, 680), "HUNGRY ANTS TD", 1.00f, LeftAlign, BottomAlign);
+
+		Render::PrintString(FPoint(828, 600), "HP : " + utils::lexical_cast(_lives), 1.00f, LeftAlign, BottomAlign);
+		Render::PrintString(FPoint(828, 580), "WAVE BEGINS IN : " + utils::lexical_cast(math::round(_delayTimer)) + "sec", 1.00f, LeftAlign, BottomAlign);
+		Render::PrintString(FPoint(828, 560), "WAVES REMAINING : " + utils::lexical_cast(_attacksRemaining), 1.00f, LeftAlign, BottomAlign);
+		Render::PrintString(FPoint(896, 520), "CURRENT WAVE : " + utils::lexical_cast(_curAttackIndex), 1.00f, CenterAlign, BottomAlign);
+		Render::PrintString(FPoint(896, 505), "Name : " + _curAttackName, 1.00f, CenterAlign, BottomAlign);
+		Render::PrintString(FPoint(896, 490), "Type: " + _curAttackType, 1.00f, CenterAlign, BottomAlign);
+		Render::PrintString(FPoint(896, 475), "Monster HP : " + utils::lexical_cast(_maxHP), 1.00f, CenterAlign, BottomAlign);
+		Render::PrintString(FPoint(896, 460), "Monster speed : " + utils::lexical_cast(_speed), 1.00f, CenterAlign, BottomAlign);
+		Render::PrintString(FPoint(896, 445), "Meat per monster : " + utils::lexical_cast(_gpm), 1.00f, CenterAlign, BottomAlign);
+
+		Render::PrintString(FPoint(896, 335), "MEAT", 1.00f, CenterAlign, BottomAlign);
+		Render::PrintString(FPoint(896, 300), utils::lexical_cast(_gold), 1.00f, CenterAlign, BottomAlign);
+		Render::EndColor();
+		Render::device.SetTexturing(false);
+	}
+	
 };
 
 void World::Update(float dt) {

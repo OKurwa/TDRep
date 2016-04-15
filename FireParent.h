@@ -63,6 +63,9 @@ protected:
 	Render::TexturePtr _tex;
 	IPoint _damage;
 	MonsterParent * _target;
+
+	EffectsContainer _misEffCont;
+	ParticleEffectPtr _misEff;
 };
 inline void intrusive_ptr_add_ref(FireParent* e) { e->AddRef(); }
 inline void intrusive_ptr_release(FireParent* e) { e->Release(); }
@@ -231,6 +234,7 @@ public:
 private:
 	int _splashRange;
 	std::vector<MonsterParent::Ptr> _targets;
+	
 };
 
 

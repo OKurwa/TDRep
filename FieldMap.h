@@ -63,6 +63,7 @@ public:
 
 		}
 	}
+	void ShowGhosts(bool);
 private:
 	int ref_cnt_;
 	bool _selected;
@@ -71,7 +72,10 @@ private:
 	IPoint _size;
 	FPoint _position;
 	//IPoint _coords;
+	
 	Render::TexturePtr _tex;
+	Render::TexturePtr _ghost;
+	bool _showGhost;
 
 };
 
@@ -113,6 +117,7 @@ public:
 	CellType PosCellType(IPoint);
 	IPoint PosCell(FPoint pos);
 	CellType SelectCell(FPoint pos);
+	void ShowGhosts(TowerType);
 	void Reset();
 	std::vector<std::vector<FieldCell::Ptr>> Cells();
 private:
@@ -121,6 +126,7 @@ private:
 	IPoint _cellSize;
 	std::vector<std::vector<FieldCell::Ptr>> _cells;
 	Render::Texture* _ground;
+	bool _showGhosts;
 };
 
 //inline void intrusive_ptr_add_ref(FieldMap* e) { e->AddRef(); }

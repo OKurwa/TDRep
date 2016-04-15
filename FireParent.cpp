@@ -214,6 +214,7 @@ NormalMissile::NormalMissile(NMissInfo inf) {
 	_missilePathX.Clear();
 	_missilePathY.Clear();
 	MakePath();
+	
 };
 
 NormalMissile::~NormalMissile() {
@@ -514,14 +515,19 @@ DecayMissile::DecayMissile(DMissInfo inf) {
 	_target = inf._target;
 	_damage = inf._damage;
 	MakePath();
-
+	_misEffCont;
+	_misEff = _misEffCont.AddEffect("IskraGreen");
+	_misEff->SetScale(0.5);
+	_misEff->Reset();
 }
 
 DecayMissile::~DecayMissile() {};
 
 void DecayMissile::Draw() {
-	if (_tex) {
-		_tex->Draw(_position);
+	if (_misEff) {
+		
+		_misEffCont.Draw();
+
 	}
 	else {
 		IRect cRect = IRect(_position.x - 1, _position.y - 1, 3, 3);
@@ -542,8 +548,12 @@ void DecayMissile::Update(float dt) {
 	}
 	else {
 		_missileTimer += dt;
+		
+		_misEffCont.Update(dt);
 		_position.x = _missilePathX.getGlobalFrame(_missileTimer);
 		_position.y = _missilePathY.getGlobalFrame(_missileTimer);
+		_misEff->posX = _position.x;
+		_misEff->posY = _position.y;
 	}
 
 };

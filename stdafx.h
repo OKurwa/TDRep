@@ -8,10 +8,12 @@
 #include <PlayrixEngine.h>
 enum TowerType {
 	NORMAL,
-	SLOW,
 	SPLASH,
+	SLOW,
 	DECAY,
-	BASH
+	BASH,
+	DESTROY,
+	EMPTY
 };
 
 typedef struct {
