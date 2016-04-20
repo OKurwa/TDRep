@@ -21,7 +21,7 @@ TowerParent::TowerParent() {
 	_range=0;
 	_missileSpeed=0;
 	_missiles.clear();
-	_tex = nullptr;
+	_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 };
 
 TowerParent::TowerParent(FPoint position, IPoint cell, float rTime, float rTimer, int range, int mSpeed, IPoint dmg, Render::TexturePtr tex) {
@@ -35,16 +35,24 @@ TowerParent::TowerParent(FPoint position, IPoint cell, float rTime, float rTimer
 	_damage = dmg;
 	_missileSpeed = mSpeed;
 	_missiles.clear();
-	_tex = tex;
+	_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 };
 
 TowerParent::~TowerParent() {
 };
 
 void TowerParent::Draw() {
+
+
 	for (int i = 0; i < _missiles.size(); i++) {
 		_missiles[i]->Draw();
 	}
+
+	
+
+
+
+
 	if (_idleAnim && _atkAnim) {
 		if (_atkAnim->IsFinished()) {
 			Render::device.SetTexturing(true);
@@ -58,17 +66,16 @@ void TowerParent::Draw() {
 			_atkAnim->Draw(IPoint(math::round(_position.x) - 64, math::round(_position.y) - 40));
 			Render::device.SetTexturing(false);
 		}
-
 	}
 	
-	else if (_tex) {
-		IRect r = IRect(_position.x - 64, _position.y - 40, 128, 128);
-		FRect tmp = FRect(0, 1 / 32.0, 0.125, 0.250);
-		Render::device.SetTexturing(true);
-		//_tex->TranslateUV(r, tmp);
-		_tex->Draw(r, tmp);
-		Render::device.SetTexturing(false);
-	}
+	//else if (_tex) {
+	//	IRect r = IRect(_position.x - 64, _position.y - 40, 128, 128);
+	//	FRect tmp = FRect(0, 1 / 32.0, 0.125, 0.250);
+	//	Render::device.SetTexturing(true);
+	//	//_tex->TranslateUV(r, tmp);
+	//	_tex->Draw(r, tmp);
+	//	Render::device.SetTexturing(false);
+	//}
 	else {
 		IRect cRect = IRect(_position.x - 5, _position.y - 5, 11, 11);
 		//Render::device.SetTexturing(false);
@@ -84,6 +91,79 @@ void TowerParent::Draw() {
 		//Render::device.SetTexturing(true);
 
 	}
+	Render::BindFont("arial");
+	Render::BeginColor(Color(255, 255, 255, 255));
+	Render::PrintString(IPoint(_position.x-32,_position.y-32), utils::lexical_cast(_lvl+1), 1.00f, LeftAlign, BottomAlign);
+	Render::EndColor();
+	
+};
+
+void TowerParent::UpgradeDraw() {
+
+	//Подсказки
+
+	if (_hint && _texHint) {
+		IRect rect = IRect(_position.x - 120, _position.y - 32 - 128, 240, 128);
+		if (_position.x - 120 < 0) {
+			rect.x = 0;
+		}
+		if (_position.x + 120 > 768) {
+			rect.x = 528;
+		}
+
+		if (_position.y - 32 - 128 < 0) {
+			rect.y = _position.y + 32;
+		}
+
+		FRect uv = FRect(0, 1, 0, 1);
+		Render::BeginAlphaMul(0.85);
+		_texHint->Draw(rect, uv);
+		Render::EndAlphaMul();
+
+		DrawHintText(rect);
+
+
+	}
+	//Кнопка апгрейда
+	if (_showUpgradeButton && _lvl < _lvlCount) {
+		Render::device.SetTexturing(false);
+		Render::BeginAlphaMul(0.5);
+		Render::BeginColor(Color(0, 0, 0, 255));
+		Render::DrawRect(_upgradeButtonRect);
+		Render::EndColor();
+		Render::EndAlphaMul();
+		Render::device.SetTexturing(true);
+		if (_upTex)
+			if (_curGold < UpgradePrice()) {
+				
+				_upTex->Draw(_upgradeButtonRect, FRect(0, 1, 0, 1));
+			}
+			else {
+				_upTex->Draw(_upgradeButtonRect, FRect(0, 1, 0, 1));
+			}
+			
+		if (UpgradePrice() > 0) {
+
+
+			if (_curGold < UpgradePrice()) {
+				Render::BindFont("arial");
+				Render::BeginColor(Color(255, 0, 0, 255));
+				Render::PrintString(_upgradeButtonRect.RightBottom(), utils::lexical_cast(UpgradePrice()), 1.00f, RightAlign, BottomAlign);
+				Render::EndColor();
+			}
+			else {
+				Render::BindFont("arial");
+				Render::BeginColor(Color(255, 255, 255, 255));
+				Render::PrintString(_upgradeButtonRect.RightBottom(), utils::lexical_cast(UpgradePrice()), 1.00f, RightAlign, BottomAlign);
+				Render::EndColor();
+			}
+			
+		}
+	}
+
+
+
+
 	
 };
 
@@ -200,61 +280,63 @@ IPoint TowerParent::Cell() {
 
 void TowerParent::SetPosition(FPoint pos) {
 	_position = pos;
-	
+
+	IPoint buttonPos = IPoint(_position.x, _position.y + 32);
+	int width = 100;
+	int height = 100;
+	if (_position.y + height + 32 > 768) {
+		buttonPos.y = _position.y - height - 32;
+	}
+	if (_position.x + width > 768) {
+		buttonPos.x = 768 - width;
+	}
+	if (_position.x < 0) {
+		buttonPos.x = 0;
+	}
+	//_upgradeButtonRect = IRect(buttonPos, width, height);
+};
+
+void TowerParent::SetUButtonPosition() {
+	IPoint buttonPos = IPoint(_position.x - 20, _position.y + 20);
+	int width = 40;
+	int height = 40;
+	if (_position.y + height + 20 > 768) {
+		buttonPos.y = _position.y - height - 20;
+	}
+	if (_position.x -20 + width > 768) {
+		buttonPos.x = 768 - width;
+	}
+	if (_position.x - 20 < 0) {
+		buttonPos.x = 0;
+	}
+	_upgradeButtonRect = IRect(buttonPos, width, height);
+	_upTex = Core::resourceManager.Get<Render::Texture>("Up");
 };
 
 void TowerParent::SetCell(IPoint cell) {
 	_cell = cell;
 };
 
-bool TowerParent::TakeAim(std::vector<MonsterParent::Ptr> & monsters) {
-	
-	if(_target==nullptr || _target ->Finish() || _target->Dead()){
-		float d = 9999;
-		int tarIndex = 9999;
-		for (int i = 0; i < monsters.size(); i++) {
-			if (!monsters[i].get()->Dead()) {
-				FPoint tarPos = monsters[i]->Position();
-				float tmpD = sqrt((tarPos.x - _position.x)*(tarPos.x - _position.x) + (tarPos.y - _position.y)*(tarPos.y - _position.y));
-				if (tmpD<d) {
-					d = tmpD;
-					tarIndex = i;
-				}
-			}
-			
-		}
-		if (d <= _range && tarIndex < 9999) {
-			_target = monsters[tarIndex].get();
-			return true;
-		}
-		else {
-			_target = nullptr;
-			return false;
-		}
-
-	}
-	else {
-		FPoint tarPos = _target->Position();
-		float tmpD = sqrt((tarPos.x - _position.x)*(tarPos.x - _position.x) + (tarPos.y - _position.y)*(tarPos.y - _position.y));
-
-		if (tmpD <= _range) {
-			return true;
-		}
-		else {
-			_target = nullptr;
-			return false;
-		}
-			
-	}
-	
-	
+void TowerParent::SetUpgradeButton(bool b) {
+	_showUpgradeButton = b;
 };
 
-bool TowerParent::TakeAimMiss(std::vector<MonsterParent::Ptr> & monsters) {
-	return true;
+bool TowerParent::UpgradeButtonActive() {
+	return _showUpgradeButton;
 };
 
 
+IRect TowerParent::UpgradeIRect() {
+	return _upgradeButtonRect;
+};
+
+void TowerParent::Upgrade() {
+	
+	if (_lvl < _lvlCount - 1) {
+		_lvl++;
+		MM::manager.PlaySample("Up");
+	}
+};
 
 void TowerParent::SetPrice(int p) {
 	_price = p;
@@ -263,6 +345,25 @@ void TowerParent::SetPrice(int p) {
 int	 TowerParent::Price() {
 	return _price;
 };
+
+void  TowerParent::SetCurGold(int g) {
+	_curGold = g;
+};
+
+void TowerParent::SetHint(IPoint pos) {
+	IRect r = IRect(_position.x-32, _position.y-32, 64, 64);
+	if (r.Contains(pos)) {
+		_hint = true;
+	}
+	else {
+		_hint = false;
+	}
+};
+
+
+
+
+
 
 //----------------------------------------------//
 //----------------------------------------------//
@@ -280,8 +381,9 @@ NormalTower::NormalTower() {
 	_range = 0;
 	_missileSpeed = 0;
 	_missiles.clear();
-	_tex = nullptr;
+	_texHint = nullptr;
 	_damage = IPoint(0, 0);
+	_showUpgradeButton = false;
 };
 
 NormalTower::NormalTower(NormalTower& proto) {
@@ -302,9 +404,9 @@ NormalTower::NormalTower(FPoint position, IPoint cell, float rTime, float rTimer
 	_range = range;
 	_missileSpeed = mSpeed;
 	_missiles.clear();
-	_tex = Core::resourceManager.Get<Render::Texture>("Ant");
+	_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 	_damage = dmg;
-	
+	_showUpgradeButton = false;
 };
 
 NormalTower::~NormalTower() {
@@ -331,7 +433,7 @@ void NormalTower::Update(float dt) {
 
 };
 */
-
+/*
 bool NormalTower::Shoot() {
 	if (_reloadTimer == 0 && _target) {
 		_missilesPrototypes[_lvl]._position=_position;
@@ -345,7 +447,7 @@ bool NormalTower::Shoot() {
 		return false;
 	}
 };
-
+*/
 void NormalTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 	
 	if (_reloadTimer == 0) {
@@ -358,7 +460,7 @@ void NormalTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 			
 			_missiles.push_back(mis);
 			_reloadTimer = _reloadTime;
-
+			MM::manager.PlaySample("Shoot");
 		}
 
 	}
@@ -390,7 +492,8 @@ void NormalTower::LoadFromXml(std::string filename) {
 			if (id == "NormalTower") {
 				
 				string value = tower->first_attribute("texture")->value();
-				_tex = Core::resourceManager.Get<Render::Texture>(value);
+				//_tex = Core::resourceManager.Get<Render::Texture>(value);
+				_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 				value = tower->first_attribute("price")->value();
 				_price = utils::lexical_cast<int>(value);
 				value = tower->first_attribute("reload")->value();
@@ -405,31 +508,13 @@ void NormalTower::LoadFromXml(std::string filename) {
 				_idleAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
 				
 				_idleAnimAngles = IDL_ANGLES;
-				/*
-				_idleAnimAngles._a0 = IPoint(0,3);
-				_idleAnimAngles._a45 = IPoint(32,35);
-				_idleAnimAngles._a90 = IPoint(64,67);
-				_idleAnimAngles._a135 = IPoint(96,99);
-				_idleAnimAngles._a180 = IPoint(128,131);
-				_idleAnimAngles._a225 = IPoint(160,163);
-				_idleAnimAngles._a270 = IPoint(192,195);
-				_idleAnimAngles._a315 = IPoint(224,227);
-				*/
+				
 				value = tower->first_attribute("atkAnimation")->value();
 				_atkAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
 				_atkAnim->setSpeed(_atkAnim->getSpeed()*_reloadTime);
 
 				_attackAnimAngles = ATK_ANGLES;
-				/*
-				_attackAnimAngles._a0 = IPoint(12, 15);
-				_attackAnimAngles._a45 = IPoint(44, 47);
-				_attackAnimAngles._a90 = IPoint(76, 79);
-				_attackAnimAngles._a135 = IPoint(108, 111);
-				_attackAnimAngles._a180 = IPoint(140, 143);
-				_attackAnimAngles._a225 = IPoint(172, 175);
-				_attackAnimAngles._a270 = IPoint(204, 207);
-				_attackAnimAngles._a315 = IPoint(236, 239);
-				*/
+				
 				for (xml_node<>* missile = tower->first_node("Missile"); missile; missile = missile->next_sibling("Missile")) {
 					string id = missile->first_attribute("id")->value();
 					NormalMissile::NMissInfo info;
@@ -440,13 +525,15 @@ void NormalTower::LoadFromXml(std::string filename) {
 					info._damage.x = utils::lexical_cast<int>(value);
 					value = missile->first_attribute("maxDMG")->value();
 					info._damage.y = utils::lexical_cast<int>(value);
+					value = missile->first_attribute("price")->value();
+					info._price = utils::lexical_cast<int>(value);
 					_missilesPrototypes.push_back(info);
 					
 				}
 			}
 		}
 
-
+		_price = _missilesPrototypes[0]._price;
 	}
 	catch (std::exception const& e) {
 		Log::log.WriteError(e.what());
@@ -461,8 +548,29 @@ void NormalTower::SetPosition(FPoint pos) {
 	for (unsigned int i = 0; i < _missilesPrototypes.size(); i++) {
 		_missilesPrototypes[i]._position = pos;
 	}
+	SetUButtonPosition();
 };
+int  NormalTower::UpgradePrice() {
+	if (_lvl < _lvlCount - 1) {
+		return _missilesPrototypes[_lvl + 1]._price;
+	}
+	else {
+		return -1;
+	}
+};
+void NormalTower::DrawHintText(IRect rect) {
 
+	Render::BindFont("arial");
+	Render::BeginColor(Color(255, 255, 255, 255));
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 105), "Normal tower: "+ utils::lexical_cast(_lvl + 1) +" lvl", 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 90), "Damage : " + utils::lexical_cast(_missilesPrototypes[_lvl]._damage.x) + "-" + utils::lexical_cast(_missilesPrototypes[_lvl]._damage.y), 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 75), "Range : " + utils::lexical_cast(_range), 1.0f, CenterAlign, BottomAlign);
+	//Render::PrintString(FPoint(rect.x + 120, rect.y + 60), "Splash : " + utils::lexical_cast(0), 1.0f, CenterAlign, BottomAlign);
+	if (_lvl<_lvlCount - 1)
+		Render::PrintString(FPoint(rect.x + 120, rect.y + 30), "Upgrade cost : " + utils::lexical_cast(_missilesPrototypes[_lvl + 1]._price), 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 15), "Destroy returns : " + utils::lexical_cast(_missilesPrototypes[_lvl]._price*0.75), 1.0f, CenterAlign, BottomAlign);
+	Render::EndColor();
+};
 //----------------------------------------------//
 //----------------------------------------------//
 //				Замедляющая башня	 			//
@@ -479,11 +587,12 @@ SlowTower::SlowTower() {
 	_range = 0;
 	_missileSpeed = 0;
 	_missiles.clear();
-	_tex = nullptr;
+	_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 	_splashRange = 0;
 	_slow = FPoint(0, 0);
 	_damage = IPoint(0, 0);
 	//_targets = nullptr;
+	_showUpgradeButton = false;
 };
 
 SlowTower::SlowTower(SlowTower& proto) {
@@ -504,11 +613,12 @@ SlowTower::SlowTower(FPoint position, IPoint cell, std::vector<MonsterParent::Pt
 	_range = range;
 	_missileSpeed = mSpeed;
 	_missiles.clear();
-	_tex = Core::resourceManager.Get<Render::Texture>("IceAnt");
+	_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 	_splashRange = sRange;
 	_slow = sFactor;
 	_damage = dmg;
 	_targets = targets;
+	_showUpgradeButton = false;
 };
 
 
@@ -516,20 +626,7 @@ SlowTower::SlowTower(FPoint position, IPoint cell, std::vector<MonsterParent::Pt
 
 SlowTower::~SlowTower() {};
 
-bool SlowTower::Shoot() {
-	if (_reloadTimer == 0 && _target) {
 
-		_missilesPrototypes[_lvl]._position = _position;
-		_missilesPrototypes[_lvl]._tPosition = _target->Position();
-		FireParent::Ptr mis = new SlowMissile(_missilesPrototypes[_lvl], _targets);
-		_missiles.push_back(mis);
-		_reloadTimer = _reloadTime;
-		return true;
-	}
-	else {
-		return false;
-	}
-};
 void SlowTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 
 	if (_reloadTimer == 0) {
@@ -539,7 +636,7 @@ void SlowTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 			UpdateAnimAngle(_target);
 			_missiles.push_back(mis);
 			_reloadTimer = _reloadTime;
-
+			MM::manager.PlaySample("Shoot");
 		}
 
 	}
@@ -572,7 +669,7 @@ void SlowTower::LoadFromXml(std::string filename) {
 			if (id == "SlowTower") {
 
 				string value = tower->first_attribute("texture")->value();
-				_tex = Core::resourceManager.Get<Render::Texture>(value);
+				_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 				value = tower->first_attribute("price")->value();
 				_price = utils::lexical_cast<int>(value);
 				value = tower->first_attribute("reload")->value();
@@ -587,31 +684,13 @@ void SlowTower::LoadFromXml(std::string filename) {
 				_idleAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
 
 				_idleAnimAngles = IDL_ANGLES;
-				/*
-				_idleAnimAngles._a0 = IPoint(0,3);
-				_idleAnimAngles._a45 = IPoint(32,35);
-				_idleAnimAngles._a90 = IPoint(64,67);
-				_idleAnimAngles._a135 = IPoint(96,99);
-				_idleAnimAngles._a180 = IPoint(128,131);
-				_idleAnimAngles._a225 = IPoint(160,163);
-				_idleAnimAngles._a270 = IPoint(192,195);
-				_idleAnimAngles._a315 = IPoint(224,227);
-				*/
+				
 				value = tower->first_attribute("atkAnimation")->value();
 				_atkAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
 				_atkAnim->setSpeed(_atkAnim->getSpeed()*_reloadTime);
 
 				_attackAnimAngles = ATK_ANGLES;
-				/*
-				_attackAnimAngles._a0 = IPoint(12, 15);
-				_attackAnimAngles._a45 = IPoint(44, 47);
-				_attackAnimAngles._a90 = IPoint(76, 79);
-				_attackAnimAngles._a135 = IPoint(108, 111);
-				_attackAnimAngles._a180 = IPoint(140, 143);
-				_attackAnimAngles._a225 = IPoint(172, 175);
-				_attackAnimAngles._a270 = IPoint(204, 207);
-				_attackAnimAngles._a315 = IPoint(236, 239);
-				*/
+				
 				for (xml_node<>* missile = tower->first_node("Missile"); missile; missile = missile->next_sibling("Missile")) {
 					SlowMissile::SlMissInfo info;
 					string id = missile->first_attribute("id")->value();
@@ -629,13 +708,15 @@ void SlowTower::LoadFromXml(std::string filename) {
 					info._sFactor.x = utils::lexical_cast<float>(value);
 					value = missile->first_attribute("slowLenght")->value();
 					info._sFactor.y = utils::lexical_cast<float>(value);
+					value = missile->first_attribute("price")->value();
+					info._price = utils::lexical_cast<int>(value);
 					_missilesPrototypes.push_back(info);
 				}
 				
 			}
 		}
 
-
+		_price = _missilesPrototypes[0]._price;
 	}
 	catch (std::exception const& e) {
 		Log::log.WriteError(e.what());
@@ -648,52 +729,40 @@ void SlowTower::LoadFromXml(std::string filename) {
 
 
 
-bool SlowTower::TakeAim(std::vector<MonsterParent::Ptr> & monsters) {
-	_targets = monsters;
-	if (_target == nullptr || _target->Finish() || _target->Dead()) {
-		float d = 9999;
-		int tarIndex = 9999;
-		for (int i = 0; i < monsters.size(); i++) {
-			if (!monsters[i].get()->Dead()) {
-				FPoint tarPos = monsters[i]->Position();
-				float tmpD = sqrt((tarPos.x - _position.x)*(tarPos.x - _position.x) + (tarPos.y - _position.y)*(tarPos.y - _position.y));
-				if (tmpD<d) {
-					d = tmpD;
-					tarIndex = i;
-				}
-			}
 
-		}
-		if (d <= _range && tarIndex < 9999) {
-			_target = monsters[tarIndex].get();
-			return true;
-		}
-		else {
-			_target = nullptr;
-			return false;
-		}
-
-	}
-	else {
-		FPoint tarPos = _target->Position();
-		float tmpD = sqrt((tarPos.x - _position.x)*(tarPos.x - _position.x) + (tarPos.y - _position.y)*(tarPos.y - _position.y));
-
-		if (tmpD <= _range) {
-			return true;
-		}
-		else {
-			_target = nullptr;
-			return false;
-		}
-
-	}
-};
 
 void SlowTower::SetPosition(FPoint pos) {
 	_position = pos;
 	for (unsigned int i = 0; i < _missilesPrototypes.size(); i++) {
 		_missilesPrototypes[i]._position = pos;
 	}
+	SetUButtonPosition();
+};
+
+int  SlowTower::UpgradePrice() {
+	if (_lvl < _lvlCount - 1) {
+		return _missilesPrototypes[_lvl + 1]._price;
+	}
+	else {
+		return -1;
+	}
+};
+
+void SlowTower::DrawHintText(IRect rect) {
+
+	Render::BindFont("arial");
+	Render::BeginColor(Color(255, 255, 255, 255));
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 105), "Slow tower: " + utils::lexical_cast(_lvl + 1) + " lvl", 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 90), "Damage : " + utils::lexical_cast(_missilesPrototypes[_lvl]._damage.x) + "-" + utils::lexical_cast(_missilesPrototypes[_lvl]._damage.y), 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 75), "Range : " + utils::lexical_cast(_range), 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 60), "Splash : " + utils::lexical_cast(_missilesPrototypes[_lvl]._sRange), 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 45), "Slow target : " + utils::lexical_cast((int)(_missilesPrototypes[_lvl]._sFactor.x * 100))+"\\% on "+ utils::lexical_cast(_missilesPrototypes[_lvl]._sFactor.y)+" sec", 1.0f, CenterAlign, BottomAlign);
+
+	
+	if (_lvl<_lvlCount - 1)
+		Render::PrintString(FPoint(rect.x + 120, rect.y + 30), "Upgrade cost : " + utils::lexical_cast(_missilesPrototypes[_lvl + 1]._price), 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 15), "Destroy returns : " + utils::lexical_cast(_missilesPrototypes[_lvl]._price*0.75), 1.0f, CenterAlign, BottomAlign);
+	Render::EndColor();
 };
 
 //----------------------------------------------//
@@ -711,9 +780,10 @@ DecayTower::DecayTower() {
 	_range = 0;
 	_missileSpeed = 0;
 	_missiles.clear();
-	_tex = nullptr;
+	_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 	_decay = FPoint(0, 0);
 	_damage = IPoint(0, 0);
+	_showUpgradeButton = false;
 };
 DecayTower::DecayTower(DecayTower& proto) {
 	*this = proto;
@@ -733,27 +803,14 @@ DecayTower::DecayTower(FPoint position, IPoint cell, float rTime, float rTimer, 
 	_range = range;
 	_missileSpeed = mSpeed;
 	_missiles.clear();
-	_tex = Core::resourceManager.Get<Render::Texture>("PoisonAnt");
+	_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 	_decay = dFactor;
 	_damage = dmg;
-
+	_showUpgradeButton = false;
 };
 
 DecayTower::~DecayTower() {};
 
-bool DecayTower::Shoot() {
-	if (_reloadTimer == 0 && _target) {
-		_missilesPrototypes[_lvl]._position = _position;
-		_missilesPrototypes[_lvl]._target = _target;
-		FireParent::Ptr mis = new DecayMissile(_missilesPrototypes[_lvl]);
-		_missiles.push_back(mis);
-		_reloadTimer = _reloadTime;
-		return true;
-	}
-	else {
-		return false;
-	}
-};
 
 void DecayTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 
@@ -764,7 +821,7 @@ void DecayTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 			UpdateAnimAngle(_target);
 			_missiles.push_back(mis);
 			_reloadTimer = _reloadTime;
-
+			MM::manager.PlaySample("Shoot");
 		}
 
 	}
@@ -797,7 +854,7 @@ void DecayTower::LoadFromXml(std::string filename) {
 			if (id == "DecayTower") {
 
 				string value = tower->first_attribute("texture")->value();
-				_tex = Core::resourceManager.Get<Render::Texture>(value);
+				_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 				value = tower->first_attribute("price")->value();
 				_price = utils::lexical_cast<int>(value);
 				value = tower->first_attribute("reload")->value();
@@ -835,12 +892,14 @@ void DecayTower::LoadFromXml(std::string filename) {
 					info._decay.x = utils::lexical_cast<int>(value);
 					value = missile->first_attribute("decayLenght")->value();
 					info._decay.y = utils::lexical_cast<float>(value);
+					value = missile->first_attribute("price")->value();
+					info._price = utils::lexical_cast<int>(value);
 					_missilesPrototypes.push_back(info);
 				}
 			}
 		}
 
-
+		_price = _missilesPrototypes[0]._price;
 	}
 	catch (std::exception const& e) {
 		Log::log.WriteError(e.what());
@@ -856,6 +915,35 @@ void DecayTower::SetPosition(FPoint pos) {
 	for (unsigned int i = 0; i < _missilesPrototypes.size(); i++) {
 		_missilesPrototypes[i]._position = pos;
 	}
+	SetUButtonPosition();
+};
+
+
+int  DecayTower::UpgradePrice() {
+	if (_lvl < _lvlCount - 1) {
+		return _missilesPrototypes[_lvl + 1]._price;
+	}
+	else {
+		return -1;
+	}
+};
+
+
+void DecayTower::DrawHintText(IRect rect) {
+
+	Render::BindFont("arial");
+	Render::BeginColor(Color(255, 255, 255, 255));
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 105), "Poison tower: " + utils::lexical_cast(_lvl + 1) + " lvl", 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 90), "Damage : " + utils::lexical_cast(_missilesPrototypes[_lvl]._damage.x) + "-" + utils::lexical_cast(_missilesPrototypes[_lvl]._damage.y), 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 75), "Range : " + utils::lexical_cast(_range), 1.0f, CenterAlign, BottomAlign);
+	//Render::PrintString(FPoint(rect.x + 120, rect.y + 60), "Splash : " + utils::lexical_cast(_missilesPrototypes[_lvl]._sRange), 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 60), "Poison : Deals " + utils::lexical_cast(_missilesPrototypes[_lvl]._decay.x) + " DPS on " + utils::lexical_cast(_missilesPrototypes[_lvl]._decay.y) + " sec", 1.0f, CenterAlign, BottomAlign);
+
+
+	if (_lvl<_lvlCount - 1)
+		Render::PrintString(FPoint(rect.x + 120, rect.y + 30), "Upgrade cost : " + utils::lexical_cast(_missilesPrototypes[_lvl + 1]._price), 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 15), "Destroy returns : " + utils::lexical_cast(_missilesPrototypes[_lvl]._price*0.75), 1.0f, CenterAlign, BottomAlign);
+	Render::EndColor();
 };
 
 //----------------------------------------------//
@@ -873,9 +961,10 @@ BashTower::BashTower() {
 	_range = 0;
 	_missileSpeed = 0;
 	_missiles.clear();
-	_tex = nullptr;
+	_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 	_bash = FPoint(0, 0);
 	_damage = IPoint(0, 0);
+	_showUpgradeButton = false;
 };
 
 BashTower::BashTower(BashTower& proto) {
@@ -896,26 +985,15 @@ BashTower::BashTower(FPoint position, IPoint cell, float rTime, float rTimer, in
 	_range = range;
 	_missileSpeed = mSpeed;
 	_missiles.clear();
-	_tex = Core::resourceManager.Get<Render::Texture>("StunAnt");
+	_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 	_bash = bash;
 	_damage = dmg;
+	_showUpgradeButton = false;
 };
 
 BashTower::~BashTower() {};
 
-bool BashTower::Shoot() {
-	if (_reloadTimer == 0 && _target) {
-		_missilesPrototypes[_lvl]._position = _position;
-		_missilesPrototypes[_lvl]._target = _target;
-		FireParent::Ptr mis = new BashMissile(_missilesPrototypes[_lvl]);
-		_missiles.push_back(mis);
-		_reloadTimer = _reloadTime;
-		return true;
-	}
-	else {
-		return false;
-	}
-};
+
 
 void BashTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 
@@ -926,7 +1004,7 @@ void BashTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 			UpdateAnimAngle(_target);
 			_missiles.push_back(mis);
 			_reloadTimer = _reloadTime;
-
+			MM::manager.PlaySample("Shoot");
 		}
 
 	}
@@ -959,7 +1037,7 @@ void BashTower::LoadFromXml(std::string filename) {
 			if (id == "BashTower") {
 
 				string value = tower->first_attribute("texture")->value();
-				_tex = Core::resourceManager.Get<Render::Texture>(value);
+				_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 				value = tower->first_attribute("price")->value();
 				_price = utils::lexical_cast<int>(value);
 				value = tower->first_attribute("reload")->value();
@@ -996,12 +1074,14 @@ void BashTower::LoadFromXml(std::string filename) {
 					info._bash.x = utils::lexical_cast<float>(value);
 					value = missile->first_attribute("bashLenght")->value();
 					info._bash.y = utils::lexical_cast<float>(value);
+					value = missile->first_attribute("price")->value();
+					info._price = utils::lexical_cast<int>(value);
 					_missilesPrototypes.push_back(info);
 				}
 			}
 		}
 
-
+		_price = _missilesPrototypes[0]._price;
 	}
 	catch (std::exception const& e) {
 		Log::log.WriteError(e.what());
@@ -1018,6 +1098,33 @@ void BashTower::SetPosition(FPoint pos) {
 	for (unsigned int i = 0; i < _missilesPrototypes.size(); i++) {
 		_missilesPrototypes[i]._position = pos;
 	}
+	SetUButtonPosition();
+};
+
+
+int  BashTower::UpgradePrice() {
+	if (_lvl < _lvlCount - 1) {
+		return _missilesPrototypes[_lvl + 1]._price;
+	}
+	else {
+		return -1;
+	}
+};
+void BashTower::DrawHintText(IRect rect) {
+
+	Render::BindFont("arial");
+	Render::BeginColor(Color(255, 255, 255, 255));
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 105), "Bash tower: " + utils::lexical_cast(_lvl + 1) + " lvl", 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 90), "Damage : " + utils::lexical_cast(_missilesPrototypes[_lvl]._damage.x) + "-" + utils::lexical_cast(_missilesPrototypes[_lvl]._damage.y), 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 75), "Range : " + utils::lexical_cast(_range), 1.0f, CenterAlign, BottomAlign);
+	//Render::PrintString(FPoint(rect.x + 120, rect.y + 60), "Splash : " + utils::lexical_cast(_missilesPrototypes[_lvl]._sRange), 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 60), "Bash :"+ utils::lexical_cast((int)(_missilesPrototypes[_lvl]._bash.x*100)) + " \\% on " + utils::lexical_cast(_missilesPrototypes[_lvl]._bash.y) + " sec", 1.0f, CenterAlign, BottomAlign);
+	
+
+	if (_lvl<_lvlCount - 1)
+		Render::PrintString(FPoint(rect.x + 120, rect.y + 30), "Upgrade cost : " + utils::lexical_cast(_missilesPrototypes[_lvl + 1]._price), 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 15), "Destroy returns : " + utils::lexical_cast(_missilesPrototypes[_lvl]._price*0.75), 1.0f, CenterAlign, BottomAlign);
+	Render::EndColor();
 };
 
 //----------------------------------------------//
@@ -1036,11 +1143,11 @@ SplashTower::SplashTower() {
 	_range = 0;
 	_missileSpeed = 0;
 	_missiles.clear();
-	_tex = nullptr;
+	_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 	_splashRange = 0;
 	//_targets = nullptr;
 	_damage = IPoint(0,0);
-	
+	_showUpgradeButton = false;
 };
 
 SplashTower::SplashTower(SplashTower& proto) {
@@ -1061,27 +1168,16 @@ SplashTower::SplashTower(FPoint position, IPoint cell, std::vector<MonsterParent
 	_range = range;
 	_missileSpeed = mSpeed;
 	_missiles.clear();
-	_tex = Core::resourceManager.Get<Render::Texture>("FireAnt");
+	_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 	_splashRange = sRange;
 	_targets = targets;
 	_damage = dmg;
+	_showUpgradeButton = false;
 };
 
 SplashTower::~SplashTower() {};
 
-bool SplashTower::Shoot() {
-	if (_reloadTimer == 0 && _target) {
-		_missilesPrototypes[_lvl]._position = _position;
-		_missilesPrototypes[_lvl]._tPosition = _target->Position();
-		FireParent::Ptr mis = new SplashMissile(_missilesPrototypes[_lvl], _targets);
-		_missiles.push_back(mis);
-		_reloadTimer = _reloadTime;
-		return true;
-	}
-	else {
-		return false;
-	}
-};
+
 void SplashTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 
 	if (_reloadTimer == 0) {
@@ -1091,6 +1187,7 @@ void SplashTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 			UpdateAnimAngle(_target);
 			_missiles.push_back(mis);
 			_reloadTimer = _reloadTime;
+			MM::manager.PlaySample("Shoot");
 
 		}
 
@@ -1099,47 +1196,7 @@ void SplashTower::TryShoot(std::vector<MonsterParent::Ptr> & monsters) {
 
 }
 
-bool SplashTower::TakeAim(std::vector<MonsterParent::Ptr> & monsters) {
-	_targets = monsters;
-	
-	if (_target == nullptr || _target->Finish() || _target->Dead()) {
-		float d = 9999;
-		int tarIndex = 9999;
-		for (int i = 0; i < monsters.size(); i++) {
-			if (!monsters[i].get()->Dead()) {
-				FPoint tarPos = monsters[i]->Position();
-				float tmpD = sqrt((tarPos.x - _position.x)*(tarPos.x - _position.x) + (tarPos.y - _position.y)*(tarPos.y - _position.y));
-				if (tmpD<d) {
-					d = tmpD;
-					tarIndex = i;
-				}
-			}
 
-		}
-		if (d <= _range && tarIndex < 9999) {
-			_target = monsters[tarIndex].get();
-			return true;
-		}
-		else {
-			_target = nullptr;
-			return false;
-		}
-
-	}
-	else {
-		FPoint tarPos = _target->Position();
-		float tmpD = sqrt((tarPos.x - _position.x)*(tarPos.x - _position.x) + (tarPos.y - _position.y)*(tarPos.y - _position.y));
-
-		if (tmpD <= _range) {
-			return true;
-		}
-		else {
-			_target = nullptr;
-			return false;
-		}
-
-	}
-};
 
 
 void SplashTower::LoadFromXml(std::string filename) {
@@ -1167,7 +1224,7 @@ void SplashTower::LoadFromXml(std::string filename) {
 			if (id == "SplashTower") {
 
 				string value = tower->first_attribute("texture")->value();
-				_tex = Core::resourceManager.Get<Render::Texture>(value);
+				_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 				value = tower->first_attribute("price")->value();
 				_price = utils::lexical_cast<int>(value);
 				value = tower->first_attribute("reload")->value();
@@ -1202,12 +1259,14 @@ void SplashTower::LoadFromXml(std::string filename) {
 
 					value = missile->first_attribute("splashRange")->value();
 					info._sRange = utils::lexical_cast<int>(value);
+					value = missile->first_attribute("price")->value();
+					info._price = utils::lexical_cast<int>(value);
 					_missilesPrototypes.push_back(info);
 				}
 			}
 		}
 
-
+		_price = _missilesPrototypes[0]._price;
 	}
 	catch (std::exception const& e) {
 		Log::log.WriteError(e.what());
@@ -1223,4 +1282,31 @@ void SplashTower::SetPosition(FPoint pos) {
 	for (unsigned int i = 0; i < _missilesPrototypes.size(); i++) {
 		_missilesPrototypes[i]._position = pos;
 	}
+	SetUButtonPosition();
+};
+
+int  SplashTower::UpgradePrice() {
+	if (_lvl < _lvlCount - 1) {
+		return _missilesPrototypes[_lvl + 1]._price;
+	}
+	else {
+		return -1;
+	}
+};
+
+void SplashTower::DrawHintText(IRect rect) {
+
+	Render::BindFont("arial");
+	Render::BeginColor(Color(255, 255, 255, 255));
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 105), "Splash tower: " + utils::lexical_cast(_lvl+1) + " lvl", 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 90), "Damage : " + utils::lexical_cast(_missilesPrototypes[_lvl]._damage.x) + "-" + utils::lexical_cast(_missilesPrototypes[_lvl]._damage.y), 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 75), "Range : " + utils::lexical_cast(_range), 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 60), "Splash : " + utils::lexical_cast(_missilesPrototypes[_lvl]._sRange), 1.0f, CenterAlign, BottomAlign);
+	//Render::PrintString(FPoint(rect.x + 120, rect.y + 60), "Bash :" + utils::lexical_cast(_missilesPrototypes[_lvl]._bash.x * 100) + " % on " + utils::lexical_cast(_missilesPrototypes[_lvl]._bash.y) + " sec", 1.0f, CenterAlign, BottomAlign);
+
+
+	if (_lvl<_lvlCount - 1)
+		Render::PrintString(FPoint(rect.x + 120, rect.y + 30), "Upgrade cost : " + utils::lexical_cast(_missilesPrototypes[_lvl + 1]._price), 1.0f, CenterAlign, BottomAlign);
+	Render::PrintString(FPoint(rect.x + 120, rect.y + 15), "Destroy returns : " + utils::lexical_cast(_missilesPrototypes[_lvl]._price*0.75), 1.0f, CenterAlign, BottomAlign);
+	Render::EndColor();
 };

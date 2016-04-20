@@ -41,7 +41,7 @@ public:
 	void Update(float dt);
 	void GoldAdd(int gold);
 	bool GoldSpend(int gold);
-	void LoseLife();
+	void LoseLife(int);
 	
 private:
 	World();
@@ -65,5 +65,8 @@ private:
 	std::string _nextAttackType;
 	float _delayTimer;
 	WorldState _state;
+	Render::TexturePtr _start_w;
+	Render::TexturePtr _lose_w;
+	Render::TexturePtr _win_w;
 	//MonsterAttack _attacks;
 };

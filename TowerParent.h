@@ -21,10 +21,11 @@ public:
 
 
 	virtual void Draw();
+	void UpgradeDraw();
 	virtual void Update(float dt);
 	void TowerParent::UpdateAnimAngle(MonsterParent * _target);
-	virtual bool TakeAim(std::vector<MonsterParent::Ptr> & monsters);
-	virtual bool Shoot() = 0;
+	
+	
 	virtual Ptr clone() = 0;
 
 
@@ -32,9 +33,15 @@ public:
 	FPoint Position();
 	IPoint Cell();
 	virtual void SetPosition(FPoint);
+	void TowerParent::SetUButtonPosition();
 	void SetCell(IPoint);
+
+	void SetUpgradeButton(bool);
+	bool UpgradeButtonActive();
+	IRect UpgradeIRect();
+	void Upgrade();
+	virtual int UpgradePrice() = 0 ;
 	
-	virtual bool TakeAimMiss(std::vector<MonsterParent::Ptr> & monsters);
 	virtual void TryShoot(std::vector<MonsterParent::Ptr> & monsters) = 0;
 	friend void intrusive_ptr_add_ref(TowerParent*);
 	friend void intrusive_ptr_release(TowerParent*);
@@ -49,6 +56,9 @@ public:
 	}
 	void SetPrice(int);
 	int Price();
+	void SetCurGold(int);
+	void SetHint(IPoint);
+	virtual void DrawHintText(IRect) {};
 protected:
 
 	int ref_cnt_;
@@ -64,17 +74,23 @@ protected:
 	int	   _range;
 	int    _missileSpeed;
 	int    _price;
+	int    _curGold;
 	int	   _lvl;
 	int    _lvlCount;
+	bool   _showUpgradeButton;
+	IRect  _upgradeButtonRect;
+	Render::TexturePtr _upTex;
 	std::vector<FireParent::Ptr> _missiles;
 	
 	
 	//Визуальная
-	Render::TexturePtr _tex;
+	Render::TexturePtr _texHint;
 	Render::AnimationPtr _idleAnim;
 	Render::AnimationPtr _atkAnim;
 	AnimAngles _attackAnimAngles;
 	AnimAngles _idleAnimAngles;
+
+	bool _hint;
 };
 inline void intrusive_ptr_add_ref(TowerParent* e) { e->AddRef(); }
 inline void intrusive_ptr_release(TowerParent* e) { e->Release(); }
@@ -100,10 +116,12 @@ public:
 
 	//void Draw();
 	//void Update(float dt);
-	bool Shoot();
+	//bool Shoot();
 	void TryShoot(std::vector<MonsterParent::Ptr> & monsters);
 	void LoadFromXml(std::string filename);
 	void SetPosition(FPoint);
+	int  UpgradePrice();
+	void DrawHintText(IRect);
 private:
 	std::vector<NormalMissile::NMissInfo> _missilesPrototypes;
 };
@@ -128,11 +146,13 @@ public:
 	}
 	//void Draw();
 	//void Update(float dt);
-	bool Shoot();
+	
 	void TryShoot(std::vector<MonsterParent::Ptr> & monsters);
 	void LoadFromXml(std::string filename);
-	bool TakeAim(std::vector<MonsterParent::Ptr> & monsters);
+	
 	void SetPosition(FPoint);
+	int  UpgradePrice();
+	void DrawHintText(IRect);
 private:
 	int    _splashRange;
 	FPoint _slow;
@@ -161,10 +181,12 @@ public:
 	//void Draw();
 	//void Update(float dt);
 
-	bool Shoot();
+	
 	void TryShoot(std::vector<MonsterParent::Ptr> & monsters);
 	void LoadFromXml(std::string filename);
 	void SetPosition(FPoint);
+	int  UpgradePrice();
+	void DrawHintText(IRect);
 private:
 	FPoint _decay;
 	std::vector<DecayMissile::DMissInfo> _missilesPrototypes;
@@ -192,10 +214,12 @@ public:
 	//void Draw();
 	//void Update(float dt);
 
-	bool Shoot();
+	
 	void TryShoot(std::vector<MonsterParent::Ptr> & monsters);
 	void LoadFromXml(std::string filename);
 	void SetPosition(FPoint);
+	int  UpgradePrice();
+	void DrawHintText(IRect);
 private:
 	FPoint _bash;
 	std::vector<BashMissile::BMissInfo> _missilesPrototypes;
@@ -222,11 +246,13 @@ public:
 	//void Draw();
 	//void Update(float dt);
 
-	bool Shoot();
+	
 	void TryShoot(std::vector<MonsterParent::Ptr> & monsters) ;
 	void LoadFromXml(std::string filename);
-	bool TakeAim(std::vector<MonsterParent::Ptr> & monsters);
+	
 	void SetPosition(FPoint);
+	int  UpgradePrice();
+	void DrawHintText(IRect);
 private:
 	int    _splashRange;
 	std::vector<MonsterParent::Ptr> _targets;

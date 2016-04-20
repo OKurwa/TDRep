@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Menu.h"
-
+#include "TowerParent.h"
 Button::Button() {
 	_tex = nullptr;
 	_rect = IRect(0,0,0,0);
@@ -12,10 +12,11 @@ Button::Button() {
 	_empty = true;
 	_light = false;
 	_pressed = false;
+
 };
 Button::Button(ButtonInfo info) {
 	_tex = info._tex;
-	
+	_texHint = Core::resourceManager.Get<Render::Texture>("Hint");
 	_buttonUVRect = info._buttonUVRect;
 	_pos =info._pos;
 	_menuPos = info._menuPos;
@@ -25,6 +26,10 @@ Button::Button(ButtonInfo info) {
 	_empty = true;
 	_light = false;
 	_pressed = false;
+	_cost = info._cost;
+	_hint = false;
+	_curGold = 0;
+
 };
 
 void Button::Draw() {
@@ -48,6 +53,22 @@ void Button::Draw() {
 			
 			Render::device.SetBlendMode(BlendMode::Alpha); // Возвращаем нормальный блендинг.
 		}
+		if (_cost > 0) {
+			Render::BindFont("arial");
+			if (_cost > _curGold) {
+				Render::BeginColor(Color(255, 0, 0, 255));
+				Render::PrintString(_rect.RightBottom(), utils::lexical_cast(_cost), 1.00f, RightAlign, BottomAlign);
+				Render::EndColor();
+			}
+			else {
+				Render::BeginColor(Color(255, 255, 255, 255));
+				Render::PrintString(_rect.RightBottom(), utils::lexical_cast(_cost), 1.00f, RightAlign, BottomAlign);
+				Render::EndColor();
+			}
+			
+			
+		}
+		
 		
 
 	}
@@ -59,6 +80,71 @@ void Button::Draw() {
 		Render::device.SetTexturing(true);
 		
 	}
+	
+};
+void Button::DrawHint() {
+	if (_hint && _texHint) {
+		IRect rect = IRect(_rect.x - 240, _rect.y - 32, 240, 128);
+		/*
+		if (_position.x - 120 < 0) {
+			rect.x = 0;
+		}
+		if (_position.x + 120 > 768) {
+			rect.x = 528;
+		}
+
+		if (_position.y - 32 - 128 < 0) {
+			rect.y = _position.y + 32;
+		}
+		*/
+		FRect uv = FRect(0, 1, 0, 1);
+		Render::BeginAlphaMul(0.85);
+		_texHint->Draw(rect, uv);
+		Render::EndAlphaMul();
+		Render::BindFont("arial");
+		Render::BeginColor(Color(255, 255, 255, 255));
+		switch (_type)
+		{
+		case NORMAL:
+			Render::PrintString(FPoint(rect.x + 120, rect.y + 105), "Normal tower", 1.0f, CenterAlign, BottomAlign);
+			Render::PrintString(rect.x + 120, rect.y + 80, 230, "Simple low cost one target tower.", 1.0f, CenterAlign, TopAlign);
+			
+			break;
+		case SPLASH:
+			Render::PrintString(FPoint(rect.x + 120, rect.y + 105), "Splash tower", 1.0f, CenterAlign, BottomAlign);
+			Render::PrintString(rect.x + 120, rect.y +80, 230, "Powerful tower, damage all targets in a small area.", 1.0f, CenterAlign, TopAlign);
+
+			break;
+		case SLOW:
+			Render::PrintString(FPoint(rect.x + 120, rect.y + 105), "Slow tower", 1.0f, CenterAlign, BottomAlign);
+			Render::PrintString(rect.x + 120, rect.y + 85, 230, "Low damage tower, decrease movespeed of all targets in a small area.", 1.0f, CenterAlign, TopAlign);
+			Render::PrintString(rect.x + 120, rect.y + 45, 230, "Effective against healing monsters.", 1.0f, CenterAlign, TopAlign);
+			Render::PrintString(rect.x + 120, rect.y + 30, 230, "Weak against immune monsters.", 1.0f, CenterAlign, TopAlign);
+			break;
+		case DECAY:
+			Render::PrintString(FPoint(rect.x + 120, rect.y + 105), "Poison tower", 1.0f, CenterAlign, BottomAlign);
+			Render::PrintString(rect.x + 120, rect.y + 85, 230, "Low damage tower, poison target with strong toxin.", 1.0f, CenterAlign, TopAlign);
+			Render::PrintString(rect.x + 120, rect.y + 45, 230, "Effective against boss monsters.", 1.0f, CenterAlign, TopAlign);
+			Render::PrintString(rect.x + 120, rect.y + 30, 230, "Weak against healing monsters.", 1.0f, CenterAlign, TopAlign);
+			break;
+		case BASH:
+			Render::PrintString(FPoint(rect.x + 120, rect.y + 105), "Bash tower", 1.0f, CenterAlign, BottomAlign);
+			Render::PrintString(rect.x + 120, rect.y + 85, 230, "Low damage tower, have a chance to stun target.", 1.0f, CenterAlign, TopAlign);
+			Render::PrintString(rect.x + 120, rect.y + 45, 230, "Effective against immune monsters.", 1.0f, CenterAlign, TopAlign);
+			Render::PrintString(rect.x + 120, rect.y + 30, 230, "Weak against boss monsters.", 1.0f, CenterAlign, TopAlign);
+			break;
+		case DESTROY:
+			Render::PrintString(FPoint(rect.x + 120, rect.y + 105), "Destroy tower", 1.0f, CenterAlign, BottomAlign);
+			Render::PrintString(rect.x + 120, rect.y + 80, 230, "Destroing tower and take some meat back.", 1.0f, CenterAlign, TopAlign);
+			break;
+		}
+		Render::EndColor();
+
+		
+		//DrawHintText(rect);
+
+
+	}
 };
 
 void Button::Update(float dt) {
@@ -68,9 +154,12 @@ void Button::SetLighter(IPoint mPos) {
 
 	if (mPos.x>_pos.x && mPos.y>_pos.y && mPos.x<_pos.x+64 && mPos.y<_pos.y+64) {
 		_light = true;
+		_hint = true;
+
 	}
 	else {
 		_light = false;
+		_hint = false;
 	}
 };
 
@@ -96,9 +185,12 @@ void Button::Reset() {
 	_light = false;
 };
 
+void Button::SetCurGold(int g) {
+	_curGold = g;
+};
 
 Menu::Menu() {};
-Menu::Menu(MenuInfo info) {
+Menu::Menu(MenuInfo info, std::vector<TowerParent::Ptr> & towers) {
 
 	_rect=info._rect;
 	_buttonSize=info._buttonSize;
@@ -124,6 +216,14 @@ Menu::Menu(MenuInfo info) {
 			}
 			
 			info._type = static_cast<TowerType>(i * 3 + j);
+			if (i * 3 + j < towers.size()) {
+				info._cost = towers[i * 3 + j]->Price();
+			}
+			else {
+				info._cost = 0;
+
+			}
+				
 			Button::Ptr button = new Button(info);
 			_buttons[i].push_back(button);
 		}
@@ -166,6 +266,12 @@ void Menu::Draw() {
 				_buttons[i][j]->Draw();
 		}
 	}
+	for (int i = 0; i < _buttons.size(); i++) {
+		for (int j = 0; j < _buttons[i].size(); j++) {
+			if (_buttons[i][j])
+				_buttons[i][j]->DrawHint();
+		}
+	}
 };
 
 
@@ -191,6 +297,14 @@ void Menu::Reset() {
 		for (int j = 0; j < _buttons[i].size(); j++) {
 			if (_buttons[i][j])
 				_buttons[i][j]->Reset();
+		}
+	}
+};
+void Menu::SetCurGold(int g) {
+	for (int i = 0; i < _buttons.size(); i++) {
+		for (int j = 0; j < _buttons[i].size(); j++) {
+			if (_buttons[i][j])
+				_buttons[i][j]->SetCurGold(g);
 		}
 	}
 };

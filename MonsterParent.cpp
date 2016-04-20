@@ -107,11 +107,17 @@ void MonsterParent::Draw() {
 					else {
 						_runAnim->Draw();
 					}
-
+					
 
 				}
 				else {
 					_dieAnim->Draw();
+					_meat->Draw(FRect(46, 76,66, 96), FRect(0, 1, 0, 1));
+					Render::BindFont("arial");
+					Render::BeginColor(Color(255, 255, 255, 255));
+					Render::PrintString(FPoint(76, 66), "+", 2.00f, LeftAlign, BottomAlign);
+					Render::EndColor();
+					//_meat->DrawRect(FRect(pos.x, pos.x + 64, pos.y + 10, pos.y + 74), FRect(0, 1, 0, 1));
 				}
 				
 				Render::device.PopMatrix();
@@ -124,7 +130,8 @@ void MonsterParent::Draw() {
 				//Render::device.SetTexturing(false);
 				Render::BindFont("arial");
 
-				Render::BeginColor(Color(255 - 255*_hp / _maxHp, 255* _hp / _maxHp, 0, 255));
+				//Render::BeginColor(Color(255 - 255*_hp / _maxHp, 255* _hp / _maxHp, 0, 255));
+				Render::BeginColor(Color(0, 255, 0, 255));
 				Render::DrawRect(cRect);
 				Render::EndColor();
 				
@@ -179,16 +186,17 @@ void MonsterParent::Update(float dt) {
 	_hp -= _decay.x * dt;
 
 	if (_hp <= 0 && !_dying) {
-		_dying = true;
-		
+		_dying = true;	
+		MM::manager.PlaySample(_dieSound);
 	}
 	
+	PostUpdate(dt);
 
 	if(_dieAnim->IsFinished())
 		_dead = true;
 	if (_dying && !_dieAnim->IsPlaying()) {
 		_dieAnim->setPlayback(true);
-
+		
 	}
 	float edt = dt;
 	edt *= (1 - _slow.x)*(1 - _bash.x);
@@ -209,7 +217,7 @@ void MonsterParent::Update(float dt) {
 		if (!_dying) {
 			
 			if (_bash != FPoint(0, 0)) {
-				_idleAnim->Update(edt);
+				_idleAnim->Update(dt);
 			}
 			else {
 				_runAnim->Update(edt*0.6);
@@ -624,6 +632,10 @@ std::vector<IPoint> MonsterParent::FillAround(std::vector<IPoint> lastWaveFilled
 bool MonsterParent::Dead() {
 	return _dead;
 };
+
+bool MonsterParent::Dying() {
+	return _dying;
+};
 bool MonsterParent::EndDeadAnim() {
 	if (_dieAnim) {
 		return _dieAnim->IsFinished();
@@ -742,6 +754,14 @@ NormalMonster::NormalMonster(NormMInfo inf) {
 	_dieAnim = inf._dieAnim;
 	_dying = false;
 	_lastAngle = 20;
+	_meat = Core::resourceManager.Get<Render::Texture>("Meat");
+	_damage = 1;
+	if (inf._dieSound == "") {
+		_dieSound == "Die";
+	}
+	else {
+		_dieSound = inf._dieSound;
+	}
 	
 };
 NormalMonster::~NormalMonster() {
@@ -825,6 +845,14 @@ BossMonster::BossMonster(BossMInfo inf) {
 	_dieAnim = inf._dieAnim;
 	_dying = false;
 	_lastAngle = 20;
+	_meat = Core::resourceManager.Get<Render::Texture>("Meat");
+	_damage = 5;
+	if (inf._dieSound == "") {
+		_dieSound == "Die";
+	}
+	else {
+		_dieSound = inf._dieSound;
+	}
 };
 BossMonster::~BossMonster() {
 };
@@ -837,7 +865,7 @@ void BossMonster::TakeDamage(TowerType effType, FPoint values, float damage) {
 	if (effType == TowerType::SLOW)
 		_slow = values;
 	if (effType == TowerType::DECAY)
-		_decay =FPoint(values.x*2, values.y*2);
+		_decay =FPoint(values.x*4, values.y*4);
 	//if (effType == "Bash") {
 	//	values.x *= 100;
 	//	if (math::random(0, 100) <= values.x)
@@ -907,6 +935,14 @@ ImmuneMonster::ImmuneMonster(ImmMInfo inf) {
 	_dieAnim = inf._dieAnim;
 	_dying = false;
 	_lastAngle = 20;
+	_meat = Core::resourceManager.Get<Render::Texture>("Meat");
+	_damage = 1;
+	if (inf._dieSound == "") {
+		_dieSound == "Die";
+	}
+	else {
+		_dieSound = inf._dieSound;
+	}
 };
 ImmuneMonster::~ImmuneMonster() {
 };
@@ -987,6 +1023,14 @@ HealingMonster::HealingMonster(HealMInfo inf) {
 	_dieAnim = inf._dieAnim;
 	_dying = false;
 	_lastAngle = 20;
+	_meat = Core::resourceManager.Get<Render::Texture>("Meat");
+	_damage = 1;
+	if (inf._dieSound == "") {
+		_dieSound == "Die";
+	}
+	else {
+		_dieSound = inf._dieSound;
+	}
 };
 HealingMonster::~HealingMonster() {
 };
@@ -996,8 +1040,8 @@ HealingMonster::~HealingMonster() {
 void HealingMonster::TakeDamage(TowerType effType, FPoint values, float damage) {
 	if (effType == TowerType::SLOW) {
 		_slow = FPoint(values.x * 2, values.y*1.5);
-		if (_slow.x > 1) {
-			_slow.x = 1;
+		if (_slow.x >= 1) {
+			_slow.x = 0.8;
 		}
 	}
 		
@@ -1011,16 +1055,21 @@ void HealingMonster::TakeDamage(TowerType effType, FPoint values, float damage) 
 
 	if (_hp > 0) {
 		_hp -= damage;
-		if (_hp <= 0) {
-			_dead = true;
-		}
+		//if (_hp <= 0) {
+		//	_dead = true;
+		//}
 	}
 	
 	
 
+}
+
+void HealingMonster::PostUpdate(float dt) {
+	if (!_dying && _hp < _maxHp) {
+		_hp = _hp + _healPerSecond*dt;
+		if (_hp > _maxHp)
+			_hp = _maxHp;
+	}
+	
+
 };
-
-//void HealingMonster::PostUpdate(float dt) {
-//	_hp+=
-
-//};

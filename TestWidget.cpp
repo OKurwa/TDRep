@@ -44,7 +44,7 @@ void TestWidget::Init()
 	info._buttonSize = IPoint(64,64);
 	info._size = IPoint(2, 3);
 	info._buttonsTex = Core::resourceManager.Get<Render::Texture>("Towers");
-	_tryMenu = new Menu(info);
+	
 	//TowerParent * t = new TowerParent(FPoint(32, 32), 0, 0, 0, 0, 0, nullptr);
 	//_towers.push_back(t);
 	_towerPs.push_back(_towerFactory.createNormal());
@@ -52,9 +52,11 @@ void TestWidget::Init()
 	_towerPs.push_back(_towerFactory.createSlow());
 	_towerPs.push_back(_towerFactory.createDecay());
 	_towerPs.push_back(_towerFactory.createBash());
+	_tryMenu = new Menu(info, _towerPs);
     //anim = Core::resourceManager.Get<Render::Animation>("FireAntAttackAnimation");
 	_enableBuildCursor = false;
 	_curTowerType = EMPTY;
+	_selectedTower = nullptr;
 }
 
 void TestWidget::Draw()
@@ -62,19 +64,23 @@ void TestWidget::Draw()
 	
 	IPoint fieldSize = _fieldMap.Size();
 	IPoint cellSize = _fieldMap.CellSize();
-	_menuBG->Draw(IPoint(768,0));
-	_tryMenu->Draw();
+	
 
 	Render::device.SetTexturing(false);
 	_fieldMap.Draw();
+
 	for (unsigned int i = 0; i < _monsters.size();i++) {
 		_monsters[i]->Draw();
 	}
 	for (unsigned int i = 0; i < _towers.size(); i++) {
 		_towers[i]->Draw();
 	}
+
+	for (unsigned int i = 0; i < _towers.size(); i++) {
+		_towers[i]->UpgradeDraw();
+	}
 	Render::device.SetTexturing(true);
-	if (_curTowerType != EMPTY && _curTowerType != DESTROY && _enableBuildCursor) {
+	if (_curTowerType != EMPTY && _curTowerType != DESTROY && _enableBuildCursor && _buildCursorPos.x<768) {
 		Render::BeginAlphaMul(0.5);
 		_buildCursor->Draw(IPoint(_buildCursorPos.x - 32, _buildCursorPos.y - 32));
 		Render::EndAlphaMul();
@@ -83,14 +89,17 @@ void TestWidget::Draw()
 		
 	
 	//Render::device.PopMatrix();
-	
+	_menuBG->Draw(IPoint(768, 0));
 	World::Instance().Draw();
+	
+	_tryMenu->Draw();
 	//anim->Draw(IPoint(0, 0));
 
 }
 
 void TestWidget::Update(float dt)
-{	
+{
+	
 
 	//anim->Update(dt*0.5);
 	if (World::Instance().State() == LOSE || World::Instance().State() == WIN)
@@ -102,6 +111,7 @@ void TestWidget::Update(float dt)
 	}
 	for (unsigned int i = 0; i < _towers.size(); i++) {
 		_towers[i]->Update(dt);
+		_towers[i]->SetCurGold(World::Instance().Gold());
 	}
 
 	for (unsigned int i = 0; i < _towers.size(); i++) {
@@ -137,7 +147,9 @@ void TestWidget::Update(float dt)
 				it = _monsters.erase(it);
 			}else if((*it)->Finish()) {
 				//World::Instance().GoldAdd(_monsterAttack.GetAttack()[_curMonsterAttack].MGold());
-				World::Instance().LoseLife();
+				
+				
+				World::Instance().LoseLife((*it)->Damage());
 				it = _monsters.erase(it);
 			}
 			else {
@@ -169,86 +181,56 @@ void TestWidget::Update(float dt)
 	
 	
 	World::Instance().Update(dt);
-	
+	_tryMenu->SetCurGold(World::Instance().Gold());
 }
 
 bool TestWidget::MouseDown(const IPoint &mouse_pos)
 {	
-	math::Matrix4 m = math::Matrix4(1, 0, 0, 0,
-									0, 1, 0, 0,
-									0, 0, 1, 0,
-									0, 0, 0, 1);
 	
-	math::Vector4 p=  math::Vector4(mouse_pos.x, mouse_pos.y, 0, 1);
 
 	
 	IPoint fieldSize = _fieldMap.Size();
 	IPoint cellSize = _fieldMap.CellSize();
-	
-	
-	//p = p.Transform(m.Translation(fieldSize.x * cellSize.x / 2, fieldSize.y*cellSize.y / 2, 0));
-	//p = p.Transform(m.RotationAxis(math::Vector3(0, 0, 1), -45));
-	//p = p.Transform(m.Scaling(1, 2, 1));
-	//p = p.Transform(m.Translation(-512, -384, 0));
-	
-	IPoint pos1 = _fieldMap.PosCell(FPoint(p.x, p.y));
-	_fieldMap.SelectCell(FPoint(p.x, p.y));
+	IPoint pos1 = _fieldMap.PosCell(mouse_pos);
+	_fieldMap.SelectCell(mouse_pos);
 
+	
+	
+
+	
+
+
+
+
+
+	
+	
 	////////////////////////////////////////
 	//			 Создание башни           //
 	////////////////////////////////////////
-	
-	_curTowerType = _tryMenu->Press(mouse_pos, _curTowerType);
-	if(World::Instance().State()==DELAY || World::Instance().State() == WAVE)
+	if (World::Instance().State() == DELAY || World::Instance().State() == WAVE) {
+		_curTowerType = _tryMenu->Press(mouse_pos, _curTowerType);
+		if (_curTowerType != EMPTY && _curTowerType != DESTROY) {
+			_enableBuildCursor = true;
+		}
+		else {
+			_enableBuildCursor = false;
+		}
+
 		_fieldMap.ShowGhosts(_curTowerType);
-
-	if (_curTowerType != EMPTY && _curTowerType != DESTROY) {
-		_enableBuildCursor = true;
 	}
-	else {
-		_enableBuildCursor = false;
-	}
+	
 
-	if (World::Instance().State() != WIN && World::Instance().State() != LOSE) {
+	if (World::Instance().State() != WIN && World::Instance().State() != LOSE && World::Instance().State() != START) {
+		
+		
+
 		if (Core::mainInput.GetMouseLeftButton()) {
-			if (_fieldMap.AddTower(pos1)) {
-
-				TowerParent::Ptr t;
-				switch (_curTowerType)
-				{
-				case NORMAL:
-					t = _towerFactory.createNormal();
-					break;
-				case SPLASH:
-					t = _towerFactory.createSplash();
-					break;
-				case SLOW:
-					t = _towerFactory.createSlow();
-					break;
-				case DECAY:
-					t = _towerFactory.createDecay();
-					break;
-				case BASH:
-					t = _towerFactory.createBash();
-					break;
-				}
-				if (t) {
-					if (World::Instance().GoldSpend(t->Price())) {
-						t->SetCell(pos1);
-						t->SetPosition(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2));
-						_towers.push_back(t);
-					}
-					else {
-						bool b = _fieldMap.DestroyTower(pos1);
-					}
-				}
-				else {
-					bool b = _fieldMap.DestroyTower(pos1);
-				}
 
 
-			};
-			if (_curTowerType == DESTROY) {
+			switch (_curTowerType)
+			{
+			case DESTROY:
 				if (_fieldMap.DestroyTower(pos1)) {
 					int destrIndex = 0;
 					bool found = false;
@@ -263,35 +245,224 @@ bool TestWidget::MouseDown(const IPoint &mouse_pos)
 						_towers.erase(_towers.begin() + destrIndex);
 					}
 				};
+				break;
+
+
+
+			case EMPTY:
+				////////////////////////////////////////
+				//				Aпгрейд				  //
+				////////////////////////////////////////
+				if (_selectedTower) {
+					if (Core::mainInput.GetMouseLeftButton() && _selectedTower->UpgradeIRect().Contains(mouse_pos)) {
+						if (World::Instance().GoldSpend(_selectedTower->UpgradePrice())) {
+							_selectedTower->Upgrade();
+						}
+						else {
+							MM::manager.PlaySample("Denied");
+						}
+					}
+					_selectedTower->SetUpgradeButton(false);
+					_selectedTower = nullptr;
+				}else
+
+				////////////////////////////////////////
+				//		Выбор башни для апгрейда	  //
+				////////////////////////////////////////
+				if (pos1 != IPoint(-1, -1)) {
+
+
+					if (!_fieldMap.Cells()[pos1.x][pos1.y]->Empty()) {
+						for (int i = 0; i < _towers.size(); i++) {
+							if (_towers[i]->Cell() == pos1 && _towers[i]->UpgradePrice()>0) {
+
+								_selectedTower = _towers[i];
+								_selectedTower->SetUpgradeButton(true);
+							}
+							else {
+								_towers[i]->SetUpgradeButton(false);
+							}
+						}
+					}
+					else {
+
+						for (int i = 0; i < _towers.size(); i++) {
+
+							_towers[i]->SetUpgradeButton(false);
+						}
+					}
+
+
+
+
+
+
+				}
+				else {
+					///_selectedTower = nullptr;
+					for (int i = 0; i < _towers.size(); i++) {
+						_towers[i]->SetUpgradeButton(false);
+					}
+				}
+
+
+
+
+				
+
+
+				
+
+				break;
+			
+			
+			
+			default:
+				if (_fieldMap.AddTower(pos1)) {
+
+					TowerParent::Ptr t;
+					switch (_curTowerType)
+					{
+					case NORMAL:
+						t = _towerFactory.createNormal();
+						break;
+					case SPLASH:
+						t = _towerFactory.createSplash();
+						break;
+					case SLOW:
+						t = _towerFactory.createSlow();
+						break;
+					case DECAY:
+						t = _towerFactory.createDecay();
+						break;
+					case BASH:
+						t = _towerFactory.createBash();
+						break;
+					}
+					if (t) {
+						if (World::Instance().GoldSpend(t->Price())) {
+							t->SetCell(pos1);
+							t->SetPosition(FPoint(pos1.x*cellSize.x + cellSize.x / 2, pos1.y*cellSize.y + cellSize.y / 2));
+							_towers.push_back(t);
+
+						}
+						else {
+							MM::manager.PlaySample("Denied");
+							_curTowerType = EMPTY;
+							_tryMenu->Reset();
+							bool b = _fieldMap.DestroyTower(pos1);
+							
+						}
+					}
+					else {
+						_curTowerType = EMPTY;
+						_tryMenu->Reset();
+						bool b = _fieldMap.DestroyTower(pos1);
+						
+					}
+
+
+				}
+				else if (pos1 != IPoint(-1, -1)) {
+					_curTowerType = EMPTY;
+					_tryMenu->Reset();
+					_fieldMap.ShowGhosts(_curTowerType);
+				}
+
+					
+				
+
+				break;
 			}
+			
+			
+
+		}
+	}
+
+
+
+
+
+
+	////////////////////////////////////////
+	//				Aпгрейд				  //
+	////////////////////////////////////////
+/*
+	if (_selectedTower) {
+		if (Core::mainInput.GetMouseLeftButton() && _selectedTower->UpgradeIRect().Contains(mouse_pos)) {
+			if (World::Instance().GoldSpend(_selectedTower->UpgradePrice())) {
+				_selectedTower->Upgrade();
+				_selectedTower->SetUpgradeButton(false);
+				_selectedTower = nullptr;
+			}
+			else {
+				_selectedTower->SetUpgradeButton(false);
+				_selectedTower = nullptr;
+			}
+		}
+	}
+	*/
+
+	
+
+
+
+
+
+	////////////////////////////////////////
+	//		Выбор башни для апгрейда	  //
+	////////////////////////////////////////
+	/*
+	if (Core::mainInput.GetMouseLeftButton()) {
+
+
+		if (pos1 != IPoint(-1, -1) && _curTowerType == EMPTY) {
+
+
+			if (!_fieldMap.Cells()[pos1.x][pos1.y]->Empty()) {
+				for (int i = 0; i < _towers.size(); i++) {
+					if (_towers[i]->Cell() == pos1 && _towers[i]->UpgradePrice()>0) {
+						
+						_selectedTower = _towers[i];
+
+					}
+					else {
+						for (int i = 0; i < _towers.size(); i++) {
+							_towers[i]->SetUpgradeButton(false);
+						}
+					}
+				}
+			}
+
+
+
 
 
 
 		}
-	}
-	
-
-	////////////////////////////////////////
-	//			 Удаление башни           //
-	////////////////////////////////////////
-
-	if (Core::mainInput.GetMouseRightButton()) {
-		if (_fieldMap.DestroyTower(pos1)) {
-			int destrIndex = 0;
-			bool found = false;
+		else {
+			_selectedTower = nullptr;
 			for (int i = 0; i < _towers.size(); i++) {
-				if (_towers[i]->Cell() == pos1) {
-					found = true;
-					destrIndex = i;
-				}
+				_towers[i]->SetUpgradeButton(false);
 			}
-			if (found) {
-				World::Instance().GoldAdd(_towers[destrIndex]->Price()*0.75);
-				_towers.erase(_towers.begin() + destrIndex);
-			}
-		};
+		}
+		if (_selectedTower) {
+			_selectedTower->SetUpgradeButton(true);
+		}
+		
+		//else if (_curTowerType != EMPTY) {
+		//	_curTowerType = EMPTY;
+		//	_fieldMap.ShowGhosts(_curTowerType);
+		//	_tryMenu->Reset();
+		//}
 
 	}
+
+	*/
+
+
+
 
 
 	
@@ -301,6 +472,9 @@ bool TestWidget::MouseDown(const IPoint &mouse_pos)
 void TestWidget::MouseMove(const IPoint &mouse_pos)
 {
 	_tryMenu->SetLighter(mouse_pos);
+	for (int i = 0; i < _towers.size(); i++) {
+		_towers[i]->SetHint(mouse_pos);
+	}
 	_buildCursorPos = mouse_pos;
 }
 
@@ -332,6 +506,10 @@ void TestWidget::AcceptMessage(const Message& message)
 		//
 		// Положительные значения посылаются для символов алфавита.
 		//
+		if (code == 'q')
+		{
+			Core::appInstance->CloseWindow();
+		}
 		if (code == 'a')
 		{
 		}

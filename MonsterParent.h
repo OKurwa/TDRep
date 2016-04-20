@@ -10,6 +10,7 @@ public:
 	virtual ~MonsterParent();
 
 	virtual void Draw();
+
 	virtual void Update(float dt);
 	virtual void PostUpdate(float dt) {};
 	void UpdateAnimAngle(float dt);
@@ -18,12 +19,14 @@ public:
 	bool FindAWay();
 	std::vector<IPoint> FillAround(std::vector<IPoint> lastWaveFilled, std::vector<std::vector<int>> & map, int d);
 	bool Dead();
+	bool Dying();
 	bool EndDeadAnim();
 	bool Finish();
 	float WayDistance();
 	FPoint Position();
 	FPoint HitPosition(float dt);
 	void SetPosition(FPoint,FieldMap*);
+	int Damage() { return _damage; };
 	friend void intrusive_ptr_add_ref(MonsterParent*);
 	friend void intrusive_ptr_release(MonsterParent*);
 	void AddRef() {
@@ -35,8 +38,11 @@ public:
 
 		}
 	}
+
+	//void SetHint(IPoint);
 protected:
 	int ref_cnt_;
+	int _damage;
 	FPoint	   _position;
 	FPoint	   _hitPosition;
 	FPoint	   _speed;
@@ -70,11 +76,15 @@ protected:
 	Render::AnimationPtr _idleAnim;
 	Render::AnimationPtr _dieAnim;
 
+	Render::TexturePtr _meat;
+
 	AnimAngles _runAnimAngles;
 	AnimAngles _idleAnimAngles;
 	AnimAngles _dieAnimAngles;
 	float _lastAngle;
 
+	bool _hint;
+	std::string _dieSound;
 };
 inline void intrusive_ptr_add_ref(MonsterParent* e) { e->AddRef(); }
 inline void intrusive_ptr_release(MonsterParent* e) { e->Release(); }
@@ -93,6 +103,7 @@ public:
 		Render::AnimationPtr _runAnim;
 		Render::AnimationPtr _idleAnim;
 		Render::AnimationPtr _dieAnim;
+		std::string _dieSound;
 	};
 	BossMonster();
 	BossMonster(BossMonster& proto);
@@ -105,6 +116,7 @@ public:
 	//void Draw();
 	//void Update(float dt);
 	void TakeDamage(TowerType effType, FPoint values, float damage);
+	//void PostUpdate(float dt);
 private:
 	float _reduceDamage;
 };
@@ -120,6 +132,7 @@ public:
 		Render::AnimationPtr _runAnim;
 		Render::AnimationPtr _idleAnim;
 		Render::AnimationPtr _dieAnim;
+		std::string _dieSound;
 	};
 	ImmuneMonster();
 	ImmuneMonster(ImmuneMonster& proto);
@@ -133,6 +146,7 @@ public:
 	//void Update(float dt);
 	
 	void TakeDamage(TowerType effType, FPoint values, float damage);
+	//void PostUpdate(float dt);
 private:
 
 };
@@ -149,6 +163,7 @@ public:
 		Render::AnimationPtr _runAnim;
 		Render::AnimationPtr _idleAnim;
 		Render::AnimationPtr _dieAnim;
+		std::string _dieSound;
 	};
 	HealingMonster();
 	HealingMonster(HealingMonster& proto);
@@ -161,9 +176,9 @@ public:
 	//void Draw();
 	//void Update(float dt);
 	void TakeDamage(TowerType effType, FPoint values, float damage);
-
+	void PostUpdate(float dt);
 private:
-	int _healPerSecond;
+	float _healPerSecond;
 };
 
 class NormalMonster :public MonsterParent
@@ -177,6 +192,7 @@ public:
 		Render::AnimationPtr _runAnim;
 		Render::AnimationPtr _idleAnim;
 		Render::AnimationPtr _dieAnim;
+		std::string _dieSound;
 	};
 	NormalMonster();
 	NormalMonster(NormalMonster& proto);
@@ -189,38 +205,38 @@ public:
 	//void Draw();
 	//void Update(float dt);
 	void TakeDamage(TowerType effType, FPoint values, float damage);
-
+	//void PostUpdate(float dt);
 private:
 	
 };
 
 
-
+const AnimAngles MOB_IDL_ANGLES = {
+	IPoint(0,3),
+	IPoint(20,23),
+	IPoint(40,43),
+	IPoint(60,63),
+	IPoint(80,83),
+	IPoint(100,103),
+	IPoint(120,123),
+	IPoint(140,143) };
 
 const AnimAngles RUN_ANGLES = {
 	IPoint(4, 11),
-	IPoint(36, 43),
-	IPoint(68, 75),
-	IPoint(100, 107),
-	IPoint(132, 139),
-	IPoint(164, 171),
-	IPoint(196, 203),
-	IPoint(228, 235) };
-const AnimAngles MOB_IDL_ANGLES = {
-	IPoint(0,3),
-	IPoint(32,35),
-	IPoint(64,67),
-	IPoint(96,99),
-	IPoint(128,131),
-	IPoint(160,163),
-	IPoint(192,195),
-	IPoint(224,227) };
+	IPoint(24, 31),
+	IPoint(44, 51),
+	IPoint(64, 71),
+	IPoint(84, 91),
+	IPoint(104, 111),
+	IPoint(124, 131),
+	IPoint(144, 151) };
+
 const AnimAngles DIE_ANGLES = {
-	IPoint(16,23),
-	IPoint(48,55),
-	IPoint(80,87),
+	IPoint(12,19),
+	IPoint(32,39),
+	IPoint(52,59),
+	IPoint(72,79),
+	IPoint(92,99),
 	IPoint(112,119),
-	IPoint(144,151),
-	IPoint(176,183),
-	IPoint(208,215),
-	IPoint(240,247) };
+	IPoint(132,139),
+	IPoint(152,159) };

@@ -51,7 +51,7 @@ public:
 	void UnSelect();
 	bool AddTower();
 	bool DestroyTower();
-
+	bool Empty();
 	friend void intrusive_ptr_add_ref(FieldCell*);
 	friend void intrusive_ptr_release(FieldCell*);
 	void AddRef() {

@@ -239,6 +239,11 @@ void MonsterAttack::LoadFromXml(std::string filename) {
 				value = attack->first_attribute("dieAnimation")->value();
 				info._dieAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
 				
+				
+				
+				value = Xml::GetStringAttributeOrDef(attack, "dieSound", "Die");
+				info._dieSound = value;
+
 				_attackPrototypes.push_back(new NormalMonster(info));
 			}
 			if (atk.Type() == "Immune") {
@@ -255,6 +260,10 @@ void MonsterAttack::LoadFromXml(std::string filename) {
 
 				value = attack->first_attribute("dieAnimation")->value();
 				info._dieAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+				
+				value = Xml::GetStringAttributeOrDef(attack, "dieSound", "Die");
+				info._dieSound = value;
+				
 				_attackPrototypes.push_back(new ImmuneMonster(info));
 			}
 			if (atk.Type() == "Healing") {
@@ -263,7 +272,7 @@ void MonsterAttack::LoadFromXml(std::string filename) {
 				info._hp = atk.MaxHp();
 				info._modSpeed = atk.Speed();
 				info._map = nullptr;
-				info._healPerSecond = 5 + 1 * _attacks.size();
+				info._healPerSecond = 150 + 1 * _attacks.size();
 				value = attack->first_attribute("runAnimation")->value();
 				info._runAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
 
@@ -272,6 +281,10 @@ void MonsterAttack::LoadFromXml(std::string filename) {
 
 				value = attack->first_attribute("dieAnimation")->value();
 				info._dieAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+				
+				value = Xml::GetStringAttributeOrDef(attack, "dieSound", "Die");
+				info._dieSound = value;
+
 				_attackPrototypes.push_back(new HealingMonster(info));
 			}
 			if (atk.Type() == "Boss") {
@@ -289,6 +302,10 @@ void MonsterAttack::LoadFromXml(std::string filename) {
 
 				value = attack->first_attribute("dieAnimation")->value();
 				info._dieAnim = Core::resourceManager.Get<Render::Animation>(value)->Clone();
+				
+				value = Xml::GetStringAttributeOrDef(attack, "dieSound", "Die");
+				info._dieSound = value;
+
 				_attackPrototypes.push_back(new BossMonster(info));
 			}
 			

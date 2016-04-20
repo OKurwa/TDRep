@@ -213,6 +213,9 @@ bool FieldCell::Selected() {
 	return _selected;
 };
 
+bool FieldCell::Empty() {
+	return _empty;
+};
 
 void FieldCell::SetPos(FPoint pos) {
 	_position = pos;
@@ -380,7 +383,7 @@ void FieldMap::Draw() {
 					cTexRect = FRect((5.0 / 8.0), (6.0 / 8.0), (0.0 / 3.0), (1.0 / 3.0));
 					break;
 				case CORNER_IN_0:
-					cTexRect = FRect((2.0 / 8.0), (3.0 / 8.0), 0.0, (1.0 / 3.0));
+					cTexRect = FRect((2.0 / 8.0), (3.0 / 8.0), (1.0 / 3.0), (2.0 / 3.0));
 					break;
 				case CORNER_IN_90:
 					cTexRect = FRect((3.0 / 8.0), (4.0 / 8.0), (2.0 / 3.0), (3.0 / 3.0));
@@ -389,10 +392,10 @@ void FieldMap::Draw() {
 					cTexRect = FRect((3.0 / 8.0), (4.0 / 8.0), (1.0 / 3.0), (2.0 / 3.0));
 					break;
 				case CORNER_IN_270:
-					cTexRect = FRect((5.0 / 8.0), (6.0 / 8.0), 0.0, (1.0 / 3.0));
+					cTexRect = FRect((2.0 / 8.0), (3.0 / 8.0), (2.0 / 3.0), (3.0 / 3.0));
 					break;
 				case CORNER_OUT_0:
-					cTexRect = FRect((4.0 / 8.0), (5.0 / 8.0), (2.0 / 3.0), (3.0 / 3.0));
+					cTexRect = FRect((5.0 / 8.0), (6.0 / 8.0), (1.0 / 3.0), (2.0 / 3.0));
 					break;
 				case CORNER_OUT_90:
 					cTexRect = FRect((6.0 / 8.0), (7.0 / 8.0), (2.0 / 3.0), (3.0 / 3.0));
@@ -402,7 +405,7 @@ void FieldMap::Draw() {
 					cTexRect = FRect((6.0 / 8.0), (7.0 / 8.0), (1.0 / 3.0), (2.0 / 3.0));
 					break;
 				case CORNER_OUT_270:
-					cTexRect = FRect((7.0 / 8.0), (8.0 / 8.0), (2.0 / 3.0), (3.0 / 3.0));
+					cTexRect = FRect((5.0 / 8.0), (6.0 / 8.0), (2.0 / 3.0), (3.0 / 3.0));
 					break;
 				case LAIR:
 					cTexRect = FRect((1.0 / 8.0), (2.0 / 8.0), (1.0 / 3.0), (2.0 / 3.0));

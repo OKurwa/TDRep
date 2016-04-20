@@ -21,7 +21,7 @@ public:
 	FireParent(FPoint position,FPoint tPosition, int mSpeed, float fTime, float mFlyTimer, TowerType mType, IPoint dmg, Render::TexturePtr tex);
 	~FireParent() {};
 	
-	virtual void Draw() = 0;
+	virtual void Draw();
 	virtual void Update(float dt) = 0;
 	virtual Ptr clone() = 0;
 	virtual void LoadFromXml(std::string, int) {};
@@ -58,6 +58,7 @@ protected:
 	float  _missileTimer;
 	bool   _fly;
 	bool   _hit;
+	int _price;
 	TimedSplinePath _missilePathX;
 	TimedSplinePath _missilePathY;
 	Render::TexturePtr _tex;
@@ -66,6 +67,7 @@ protected:
 
 	EffectsContainer _misEffCont;
 	ParticleEffectPtr _misEff;
+	ParticleEffectPtr _hitEff;
 };
 inline void intrusive_ptr_add_ref(FireParent* e) { e->AddRef(); }
 inline void intrusive_ptr_release(FireParent* e) { e->Release(); }
@@ -85,6 +87,7 @@ public:
 		int	_modSpeed;
 		IPoint _damage;
 		MonsterParent * _target;
+		int _price;
 	};
 
 	NormalMissile();
@@ -93,7 +96,7 @@ public:
 	
 	~NormalMissile();
 	
-	void Draw();
+	
 	void Update(float dt);
 	NormalMissile::Ptr clone() {
 		return new NormalMissile(*this);
@@ -120,6 +123,7 @@ public:
 		IPoint _damage;
 		FPoint _sFactor;
 		int _sRange;
+		int _price;
 	};
 
 
@@ -128,7 +132,7 @@ public:
 	SlowMissile(SlMissInfo, std::vector<MonsterParent::Ptr> & targets);
 	~SlowMissile();
 
-	void Draw();
+	
 	void Update(float dt);
 	FireParent::Ptr clone() {
 		return new SlowMissile(*this);
@@ -156,13 +160,14 @@ public:
 		IPoint _damage;
 		MonsterParent * _target;
 		FPoint _decay;
+		int _price;
 	};
 	DecayMissile();
 	//DecayMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, FPoint decay, IPoint dmg, Render::TexturePtr tex);
 	DecayMissile(DMissInfo);
 	~DecayMissile();
 
-	void Draw();
+	
 	void Update(float dt);
 	FireParent::Ptr clone() {
 		return new DecayMissile(*this);
@@ -187,13 +192,14 @@ public:
 		IPoint _damage;
 		MonsterParent * _target;
 		FPoint _bash;
+		int _price;
 	};
 	BashMissile();
 	//BashMissile(FPoint position, MonsterParent * target, int mSpeed, float fTime, float mFlyTimer, FPoint bash, IPoint dmg, Render::TexturePtr tex);
 	BashMissile(BMissInfo);
 	~BashMissile();
 
-	void Draw();
+	
 	void Update(float dt);
 	FireParent::Ptr clone() {
 		return new BashMissile(*this);
@@ -218,13 +224,14 @@ public:
 		int	_modSpeed;
 		IPoint _damage;
 		int _sRange;
+		int _price;
 	};
 	SplashMissile();
 	//SplashMissile(FPoint position, FPoint tPosition, std::vector<MonsterParent::Ptr> & targets, int mSpeed, float fTime, float mFlyTimer, int sRange, IPoint dmg, Render::TexturePtr tex);
 	SplashMissile::SplashMissile(SpMissInfo inf, std::vector<MonsterParent::Ptr> & targets);
 	~SplashMissile();
 
-	void Draw();
+	
 	void Update(float dt);
 	FireParent::Ptr clone() {
 		return new SplashMissile(*this);
